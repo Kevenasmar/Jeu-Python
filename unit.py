@@ -35,13 +35,41 @@ class Unit:
             target.health -= self.attack_power
 
     def draw(self, screen):
-        """Affiche l'unité sur l'écran."""
-        color = BLUE if self.team == 'player' else RED
+        """
+        Affiche l'unité sur l'écran avec son image et un rectangle de sélection si sélectionnée.
+        """
+        # Dessiner le rectangle de sélection si l'unité est sélectionnée
         if self.is_selected:
-            pygame.draw.rect(screen, GREEN, (self.x * CELL_SIZE,
-                             self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-        pygame.draw.circle(screen, color, (self.x * CELL_SIZE + CELL_SIZE //
-                           2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
+            pygame.draw.rect(
+                screen,
+                GREEN,  # Couleur du rectangle de sélection
+                (self.x * CELL_SIZE, self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+            )
+
+        # Dessiner l'image de l'unité
+        image_rect = self.image.get_rect()
+        image_rect.center = (self.x * CELL_SIZE + CELL_SIZE // 2, self.y * CELL_SIZE + CELL_SIZE // 2)
+        screen.blit(self.image, image_rect)
+
+        
+    def draw_healthbar(self, screen, health):
+        """Dessine une barre de santé au-dessus de la cellule de l'unité."""
+        # Dimensions et position de la barre de santé
+        bar_width = CELL_SIZE  # Largeur de la cellule
+        bar_height = 5         # Hauteur de la barre de santé
+        bar_x = self.x * CELL_SIZE  # Position X (alignée avec la cellule)
+        bar_y = self.y * CELL_SIZE - bar_height - 2  # Position Y (au-dessus de la cellule)
+
+        # Barre rouge (fond - santé maximale)
+        pygame.draw.rect(screen, RED, (bar_x, bar_y, bar_width, bar_height))
+
+        # Barre verte (santé actuelle)
+        pygame.draw.rect(screen, GREEN, (bar_x, bar_y, bar_width * (health / 100), bar_height))
+
+        # pygame.draw.rect(screen, GREEN, (self.x * CELL_SIZE,
+        #                      self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        # pygame.draw.circle(screen, color, (self.x * CELL_SIZE + CELL_SIZE //
+        #                    2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
         
 def move(self, game):
     '''
@@ -105,9 +133,8 @@ def move(self, game):
         pygame.draw.rect(game.screen, (255, 255, 0, 128), (sel_x, sel_y, CELL_SIZE, CELL_SIZE), 0)
 
         pygame.display.flip()
-       
-
-
+    
+    
 '''
 ------------------------------------------------
 LES DIFFÉRENTS TYPES D'UNITÉS
@@ -176,7 +203,7 @@ class Giant(Unit):
 
     def stomp(self, target):
         """
-        Inflige des dégâts très importants et repousse la cible de 2 cases.
+        Inflige des dégâts très importants et repousse la cible d'une case.
         La direction du recul est déterminée en fonction de la position relative de la cible.
         """
         if self._in_range(target):
@@ -193,9 +220,9 @@ class Giant(Unit):
             if dy != 0:
                 dy = int(dy / abs(dy))
 
-            # Apply knockback by 2 cells
-            new_x = target.x + dx * 2
-            new_y = target.y + dy * 2
+            # Apply knockback by 1 cell
+            new_x = target.x + dx 
+            new_y = target.y + dy
 
             # Ensure the target doesn't get knocked out of the grid
             if 0 <= new_x < GRID_SIZE:
