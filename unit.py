@@ -89,7 +89,41 @@ class Unit:
         pygame.draw.rect(screen, GC.RED, (bar_x, bar_y, bar_width, bar_height))
 
         # Barre verte (santé actuelle)
-        pygame.draw.rect(screen, GC.GREEN, (bar_x, bar_y, bar_width * (self.health / 100), bar_height))
+
+        pygame.draw.rect(screen, GC.GREEN, (bar_x, bar_y, bar_width * (health / 100), bar_height))
+
+        # pygame.draw.rect(screen, GREEN, (self.x * CELL_SIZE,
+        #                      self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        # pygame.draw.circle(screen, color, (self.x * CELL_SIZE + CELL_SIZE //
+        #                    2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
+        
+    def move(self, new_x, new_y):
+        """
+        Moves the unit to a new position within its speed radius.
+        
+        Parameters:
+        new_x (int): The target x-coordinate.
+        new_y (int): The target y-coordinate.
+        """
+        distance = abs(new_x - self.x) + abs(new_y - self.y)
+        if distance <= self.speed and 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE:
+            self.x = new_x
+            self.y = new_y
+        else:
+            print(f"Invalid move: Target position ({new_x}, {new_y}) is out of range or out of bounds.")
+
+    
+'''
+------------------------------------------------
+LES DIFFÉRENTS TYPES D'UNITÉS
+------------------------------------------------
+'''
+
+'''
+----------
+L'Archer
+----------
+'''
 
 
 class Archer(Unit):

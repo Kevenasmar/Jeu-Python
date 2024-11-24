@@ -42,6 +42,7 @@ class Game:
         self.screen.blit(log_surface, log_rect)
         pygame.display.flip()
 
+
     def calculate_valid_cells(self, unit):
         """Calculate accessible cells for a unit."""
         valid_cells = []
@@ -104,7 +105,6 @@ class Game:
             selected_unit.is_selected == True
 
             valid_cells = self.calculate_valid_cells(selected_unit)
-
             self.redraw_static_elements()  # Grid and units
             self.draw_highlighted_cells(valid_cells)
             has_acted = False
@@ -116,7 +116,9 @@ class Game:
 
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         mouse_x, mouse_y = pygame.mouse.get_pos()
+
                         new_x, new_y = mouse_x // GC.CELL_SIZE, mouse_y // GC.CELL_SIZE
+
 
                         if (new_x, new_y) in valid_cells:
                             selected_unit.move(new_x, new_y)
@@ -124,6 +126,7 @@ class Game:
                             selected_unit.is_selected = False
 
                     if event.type == pygame.KEYDOWN:
+
                         if event.key == pygame.K_s:  # Skip turn pour la touche s 
                             has_acted = True
                             selected_unit.is_selected = False
@@ -136,14 +139,17 @@ class Game:
             if self.check_game_over():
                 return
 
+            # Random movement logic for simplicity
             target = random.choice(self.player_units)
             dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
             dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
             new_x = enemy.x + dx
             new_y = enemy.y + dy
 
+
             if abs(new_x - enemy.x) + abs(new_y - enemy.y) <= enemy.speed and self.tile_map.is_walkable(new_x, new_y):
                 enemy.move(new_x, new_y)
+
 
             if abs(enemy.x - target.x) <= enemy.range and abs(enemy.y - target.y) <= enemy.range:
                 enemy.attack(target)
@@ -182,6 +188,7 @@ class Game:
         pygame.time.wait(3000)  # Pause for 3 seconds
         pygame.quit()
         exit()
+
 
 def main():
     pygame.init()
