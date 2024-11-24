@@ -182,3 +182,26 @@ class Giant(Unit):
                 target.x = new_x
             if 0 <= new_y < GRID_SIZE:
                 target.y = new_y
+
+
+'''
+-------------
+Le Mage 
+-------------
+'''
+
+class Mage(Unit):
+    def __init__(self, x, y, health, attack_power, speed, defense, team):
+        super().__init__(x, y, health, attack_power, speed, defense, team)
+        self.range = 4  # Mage's attack range
+
+    def _in_range(self, target):
+        """Vérifier si la cible est dans la portée d'attaque"""
+        return abs(self.x - target.x) <= self.range and abs(self.y - target.y) <= self.range
+
+    '''Compétences'''
+    def heal_alies(self, target):
+        """Soigne une unité alliée."""
+        if self._in_range(target) and target.team == self.team:
+            target.health += self.attack_power
+        
