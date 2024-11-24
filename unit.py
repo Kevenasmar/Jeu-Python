@@ -16,7 +16,7 @@ GREEN = (0, 255, 0)
 
 class Unit:
 
-    def _init_(self, x, y, health, attack, defense, speed, vision, image_path, team):
+    def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
         self.x = x
         self.y = y
         self.health = health
@@ -148,8 +148,8 @@ L'Archer
 '''
 
 class Archer(Unit):
-    def __init__(self, x, y, health, attack_power, speed, defense, team):
-        super().__init__(x, y, health, attack_power, speed, defense, team)
+    def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
+        super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
         self.range = 3 #Archer's attack range
         self.dot_targets = {}  #Track units affected by fire arrow 
          
@@ -187,8 +187,8 @@ Le Géant
 '''
 
 class Giant(Unit):
-    def __init__(self, x, y, health, attack_power, speed, defense, team):
-        super().__init__(x, y, health, attack_power, speed, defense, team)
+    def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
+        super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
         self.range = 1  # Giant's attack range (very low)
 
     def _in_range(self, target):
@@ -238,8 +238,8 @@ Le Mage
 '''
 
 class Mage(Unit):
-    def __init__(self, x, y, health, attack_power, speed, defense, team):
-        super().__init__(x, y, health, attack_power, speed, defense, team)
+    def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
+        super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
         self.range = 4  # Mage's attack range
 
     def _in_range(self, target):
