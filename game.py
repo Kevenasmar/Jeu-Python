@@ -27,15 +27,73 @@ class Game:
         self.screen.blit(log_surface, log_rect)
         pygame.display.flip()
 
+
+    def calculate_valid_cells(self, unit):
+        """Calcule les cases accessibles pour une unité."""
+        valid_cells = []
+        for dx in range(-unit.speed, unit.speed + 1):
+            for dy in range(-unit.speed, unit.speed + 1):
+                if abs(dx) + abs(dy) <= unit.speed:  # Distance de Manhattan
+                    x, y = unit.x + dx, unit.y + dy
+                    if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE:  # Limites de la grille
+                        valid_cells.append((x, y))
+        return valid_cells
+
+    def redraw_static_elements(self):
+        """Redessine la grille et les unités."""
+        # Remplir l'écran de noir
+        self.screen.fill(BLACK)
+
+        # Dessiner la grille
+        for x in range(0, WIDTH, CELL_SIZE):
+            for y in range(0, HEIGHT, CELL_SIZE):
+                rect = pygame.Rect(x, y, CELL_SIZE, CELL_SIZE)
+                pygame.draw.rect(self.screen, WHITE, rect, 1)
+
+        pygame.display.flip()  # Mise à jour une seule fois
+
+
+
+
+    def draw_highlighted_cells(self, valid_cells):
+        """Dessine les cases accessibles et met en surbrillance celle sous le curseur."""
+        # Dessiner les cases accessibles en jaune
+        for x, y in valid_cells:
+            rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+            pygame.draw.rect(self.screen, (255, 255, 0), rect, 0)  # Jaune avec remplissage
+
+        # Récupérer la position de la souris
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        hover_x, hover_y = mouse_x // CELL_SIZE, mouse_y // CELL_SIZE
+
+        # Mettre en surbrillance la case sous le curseur en rouge
+        if (hover_x, hover_y) in valid_cells:
+            hover_rect = pygame.Rect(hover_x * CELL_SIZE, hover_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+            pygame.draw.rect(self.screen, (255, 0, 0), hover_rect, 0)  # Rouge avec remplissage
+
+        # Redessiner les unités pour qu'elles soient toujours au-dessus
+        for unit in self.player_units + self.enemy_units:
+            unit.draw(self.screen)
+
+        pygame.display.update()  # Mise à jour partielle
+
+
+
     def handle_player_turn(self):
-        """Handles the player's turn."""
+        """Gestion du tour du joueur sans scintillement."""
         for selected_unit in self.player_units:
-            if self.check_game_over():  # Check if the game is over
+            if self.check_game_over():
                 return
 
             has_acted = False
             selected_unit.is_selected = True
-            self.flip_display()
+
+            # Calculer les cases accessibles au début
+            valid_cells = self.calculate_valid_cells(selected_unit)
+
+            # Dessiner une fois la grille, les unités et les highlights persistants
+            self.redraw_static_elements()  # Grille et unités
+            self.draw_highlighted_cells(valid_cells)
 
             while not has_acted:
                 for event in pygame.event.get():
@@ -43,55 +101,26 @@ class Game:
                         pygame.quit()
                         exit()
 
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        mouse_x, mouse_y = pygame.mouse.get_pos()
+                        new_x, new_y = mouse_x // CELL_SIZE, mouse_y // CELL_SIZE
+
+                        # Valider le mouvement dans les cases accessibles
+                        if (new_x, new_y) in valid_cells:
+                            selected_unit.move(new_x, new_y)
+                            has_acted = True
+                            selected_unit.is_selected = False
+
                     if event.type == pygame.KEYDOWN:
-                        # Movement
-                        if event.key == pygame.K_m:
-                            selected_unit.move(self)
-                            self.flip_display()
+                        if event.key == pygame.K_s:  # Passer le tour
+                            has_acted = True
+                            selected_unit.is_selected = False
 
-                        # Attack
-                        if event.key == pygame.K_a:
-                            for enemy in self.enemy_units:
-                                if abs(selected_unit.x - enemy.x) <= selected_unit.range and \
-                                        abs(selected_unit.y - enemy.y) <= selected_unit.range:
-                                    self.display_log(
-                                        f"Choose ability for {selected_unit.__class__.__name__} (1: Basic, 2: Special)"
-                                    )
-                                    ability_chosen = False
+                # Redessiner seulement les cases et surbrillance dynamique
+                self.draw_highlighted_cells(valid_cells)
 
-                                    while not ability_chosen:
-                                        for attack_event in pygame.event.get():
-                                            if attack_event.type == pygame.KEYDOWN:
-                                                if attack_event.key == pygame.K_1:
-                                                    if isinstance(selected_unit, Archer):
-                                                        selected_unit.normal_arrow(enemy)
-                                                        self.display_log(f"{selected_unit.__class__.__name__} used Normal Arrow!")
-                                                    elif isinstance(selected_unit, Giant):
-                                                        selected_unit.punch(enemy)
-                                                        self.display_log(f"{selected_unit.__class__.__name__} used Punch!")
-                                                    elif isinstance(selected_unit, Mage):
-                                                        selected_unit.heal_alies(enemy)
-                                                        self.display_log(f"{selected_unit.__class__.__name__} healed!")
-                                                    ability_chosen = True
 
-                                                elif attack_event.key == pygame.K_2:
-                                                    if isinstance(selected_unit, Archer):
-                                                        selected_unit.fire_arrow(enemy)
-                                                        self.display_log(f"{selected_unit.__class__.__name__} used Fire Arrow!")
-                                                    elif isinstance(selected_unit, Giant):
-                                                        selected_unit.stomp(enemy)
-                                                        self.display_log(f"{selected_unit.__class__.__name__} used Stomp!")
-                                                    elif isinstance(selected_unit, Mage):
-                                                        self.display_log(f"{selected_unit.__class__.__name__} used a special ability!")
-                                                    ability_chosen = True
 
-                                                if enemy.health <= 0:
-                                                    self.enemy_units.remove(enemy)
-                                                    self.display_log(f"{enemy.__class__.__name__} was defeated!")
-                                                    ability_chosen = True
-
-                                    has_acted = True
-                                    selected_unit.is_selected = False
 
     def handle_enemy_turn(self):
         """Simple AI for the enemy's turn."""
@@ -99,10 +128,18 @@ class Game:
             if self.check_game_over():  # Check if the game is over
                 return
 
+            # Random movement logic for simplicity
             target = random.choice(self.player_units)
             dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
             dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
-            enemy.move(self)
+            new_x = enemy.x + dx
+            new_y = enemy.y + dy
+
+            # Ensure the movement is valid within the grid and speed
+            if abs(new_x - enemy.x) + abs(new_y - enemy.y) <= enemy.speed:
+                enemy.move(new_x, new_y)
+
+            # Attack if in range
             if abs(enemy.x - target.x) <= enemy.range and abs(enemy.y - target.y) <= enemy.range:
                 enemy.attack(target)
                 self.display_log(f"{enemy.__class__.__name__} attacked {target.__class__.__name__}!")
@@ -145,7 +182,6 @@ class Game:
         pygame.quit()
         exit()
         
-
 
 def main():
     pygame.init()
