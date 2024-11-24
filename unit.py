@@ -44,7 +44,7 @@ class Unit:
         Dessine l'unité sur la grille.
     """
 
-    def __init__(self, x, y, health, attack_power, team):
+    def _init_(self, x, y, health, attack, defense, speed, vision, image_path, team):
         """
         Construit une unité avec une position, une santé, une puissance d'attaque et une équipe.
 
@@ -64,15 +64,14 @@ class Unit:
         self.x = x
         self.y = y
         self.health = health
-        self.attack_power = attack_power
-        self.team = team  # 'player' ou 'enemy'
+        self.attack_power = attack
+        self.defense = defense
+        self.speed = speed
+        self.vision = vision
+        self.image = pygame.image.load(image_path)  # chargement de l'image
+        self.image = pygame.transform.scale(self.image, (0.75*CELL_SIZE, 0.75*CELL_SIZE))  # Echelle de l'image
+        self.team = team  # 'joueur' ou 'ennemi'
         self.is_selected = False
-
-    def move(self, dx, dy):
-        """Déplace l'unité de dx, dy."""
-        if 0 <= self.x + dx < GRID_SIZE and 0 <= self.y + dy < GRID_SIZE:
-            self.x += dx
-            self.y += dy
 
     def attack(self, target):
         """Attaque une unité cible."""
@@ -80,10 +79,11 @@ class Unit:
             target.health -= self.attack_power
 
     def draw(self, screen):
-        """Affiche l'unité sur l'écran."""
-        color = BLUE if self.team == 'player' else RED
-        if self.is_selected:
-            pygame.draw.rect(screen, GREEN, (self.x * CELL_SIZE,
-                             self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-        pygame.draw.circle(screen, color, (self.x * CELL_SIZE + CELL_SIZE //
-                           2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
+        # If an image is loaded, blit it onto the screen at the unit's grid position
+        if self.image:
+            screen.blit(self.image, (self.x * CELL_SIZE, self.y * CELL_SIZE))
+        else:
+            # Fallback: If no image is loaded, draw a colored rectangle as a placeholder
+            color = BLUE if self.team == 'player' else RED
+            pygame.draw.rect(screen, color, (self.x * CELL_SIZE, self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+
