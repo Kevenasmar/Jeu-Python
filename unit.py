@@ -156,7 +156,7 @@ class Giant(Unit):
 
     def stomp(self, target):
         """
-        Inflige des dégâts très importants et repousse la cible de 2 cases.
+        Inflige des dégâts très importants et repousse la cible d'une case.
         La direction du recul est déterminée en fonction de la position relative de la cible.
         """
         if self._in_range(target):
@@ -173,9 +173,9 @@ class Giant(Unit):
             if dy != 0:
                 dy = int(dy / abs(dy))
 
-            # Apply knockback by 2 cells
-            new_x = target.x + dx * 2
-            new_y = target.y + dy * 2
+            # Apply knockback by 1 cell
+            new_x = target.x + dx 
+            new_y = target.y + dy
 
             # Ensure the target doesn't get knocked out of the grid
             if 0 <= new_x < GRID_SIZE:
