@@ -78,7 +78,7 @@ class Unit:
         image_rect.center = (self.x * GC.CELL_SIZE + GC.CELL_SIZE // 2, self.y * GC.CELL_SIZE + GC.CELL_SIZE // 2)
         screen.blit(self.image, image_rect)
 
-    def draw_healthbar(self, screen):
+    def draw_healthbar(self, screen,health):
         """Dessine une barre de santé au-dessus de la cellule de l'unité."""
         bar_width = GC.CELL_SIZE  # Largeur de la cellule
         bar_height = 5  # Hauteur de la barre de santé
@@ -106,7 +106,7 @@ class Unit:
         new_y (int): The target y-coordinate.
         """
         distance = abs(new_x - self.x) + abs(new_y - self.y)
-        if distance <= self.speed and 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE:
+        if distance <= self.speed and 0 <= new_x < GC.GRID_SIZE and 0 <= new_y < GC.GRID_SIZE:
             self.x = new_x
             self.y = new_y
         else:
