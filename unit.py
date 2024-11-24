@@ -16,7 +16,7 @@ GREEN = (0, 255, 0)
 
 class Unit:
 
-    def _init_(self, x, y, health, attack, defense, speed, vision, image_path, team):
+    def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
         self.x = x
         self.y = y
         self.health = health
