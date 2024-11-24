@@ -44,7 +44,7 @@ class Unit:
         Dessine l'unité sur la grille.
     """
 
-    def __init__(self, x, y, health, attack_power, team):
+    def _init_(self, x, y, health, attack, defense, speed, vision, image_path, team):
         """
         Construit une unité avec une position, une santé, une puissance d'attaque et une équipe.
 
@@ -64,15 +64,14 @@ class Unit:
         self.x = x
         self.y = y
         self.health = health
-        self.attack_power = attack_power
-        self.team = team  # 'player' ou 'enemy'
+        self.attack_power = attack
+        self.defense = defense
+        self.speed = speed
+        self.vision = vision
+        self.image = pygame.image.load(image_path)  # chargement de l'image
+        self.image = pygame.transform.scale(self.image, (0.75*CELL_SIZE, 0.75*CELL_SIZE))  # Echelle de l'image
+        self.team = team  # 'joueur' ou 'ennemi'
         self.is_selected = False
-
-    def move(self, dx, dy):
-        """Déplace l'unité de dx, dy."""
-        if 0 <= self.x + dx < GRID_SIZE and 0 <= self.y + dy < GRID_SIZE:
-            self.x += dx
-            self.y += dy
 
     def attack(self, target):
         """Attaque une unité cible."""
