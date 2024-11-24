@@ -8,15 +8,15 @@ class Game:
     def __init__(self, screen):
         self.screen = screen
         self.player_units = [
-            Archer(0, 0, 10, 3, 2, 1, 'player'),  # Archer with health=10, attack=3, speed=2
-            Mage(1, 0, 8, 4, 1, 2, 'player'),    # Mage with health=8, attack=4, speed=1
-            Giant(2, 0, 15, 5, 1, 3, 'player')   # Giant with health=15, attack=5, speed=1
+            Archer(0, 0, 100, 5, 2, 3, 1, 'archer.jpg', 'player'),  # Archer with health=10, attack=3, speed=2
+            Mage(1, 0, 100, 3, 1, 1, 1, 'mage.jpg', 'player'),    # Mage with health=8, attack=4, speed=1
+            Giant(2, 0, 150, 10, 1, 1, 3, 'giant.jpg', 'player')   # Giant with health=15, attack=5, speed=1
         ]
 
         self.enemy_units = [
-            Archer(6, 6, 10, 3, 2, 1, 'enemy'),  # Archer with health=10, attack=3, speed=2
-            Mage(7, 6, 8, 4, 1, 2, 'enemy'),    # Mage with health=8, attack=4, speed=1
-            Giant(8, 6, 15, 5, 1, 3, 'enemy')   # Giant with health=15, attack=5, speed=1
+            Archer(5, 6, 100, 5, 2, 3, 1, 'enemy_archer.png', 'enemy'),  # Archer with health=10, attack=3, speed=2
+            Mage(6, 6, 100, 3, 1, 1, 1, 'enemy_mage.png', 'enemy'),    # Mage with health=8, attack=4, speed=1
+            Giant(7, 6, 150, 10, 1, 1, 3, 'enemy_giant.png', 'enemy')   # Giant with health=15, attack=5, speed=1
         ]
 
     def display_log(self, message):
