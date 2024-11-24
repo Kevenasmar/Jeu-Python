@@ -67,20 +67,71 @@ class World:
         return map_int
 
 class Map_Aleatoire:
+    """
+    Cette classe est utilisée pour représenter une carte aléatoire générée à partir de données de terrain.
+    
+    Attributes:
+    terrain_data (list): Une liste 2D représentant les données de terrain de la carte.
+    terrain_tiles (dict): Un dictionnaire contenant les tuiles de terrain associées à chaque type de terrain.
+    cell_size (int): La taille d'une cellule de la carte.
+    """
+
     def __init__(self, terrain_data, terrain_tiles, cell_size):
+        """
+        Initialise une instance de la classe Map_Aleatoire.
+        
+        Args:
+        terrain_data (list): Les données de terrain de la carte.
+        terrain_tiles (dict): Les tuiles de terrain associées à chaque type de terrain.
+        cell_size (int): La taille d'une cellule de la carte.
+        """
         self.terrain_data = terrain_data
         self.terrain_tiles = terrain_tiles
         self.cell_size = cell_size
 
-    def is_walkable(self, x, y):
-    # Check if the coordinates are within bounds
-        if 0 <= x < len(self.terrain_data[0]) and 0 <= y < len(self.terrain_data): # type: ignore
-            terrain_type = self.terrain_data[y][x]
-            return not self.terrain_tiles[terrain_type].is_solide
-        return False
-    def draw(self, screen):
-        for y, row in enumerate(self.terrain_data):
-            for x, terrain_type in enumerate(row):
-                tile = self.terrain_tiles[terrain_type]
-                screen.blit(tile.image, (x * self.cell_size, y * self.cell_size))
+      
+    def is_walkable(self, x, y, unité=None):
+        """
+        Vérifie si une position donnée sur la carte est accessible.
+        
+        Args:
+        x (int): La coordonnée x de la position.
+        y (int): La coordonnée y de la position.
+        unité (object): L'unité qui tente de marcher (peut être un mage).
+        
+        Returns:
+        bool: True si la position est accessible, False sinon.
+        """
+        # Vérification des limites
+        if not (0 <= x < len(self.terrain_data[0]) and 0 <= y < len(self.terrain_data)):
+            return False
+        
+        terrain_type = self.terrain_data[y][x]
+        tile = self.terrain_tiles[terrain_type]
+        
+        # Vérification pour le mage en premier
+        if isinstance(unité, Mage) and isinstance(tile, WaterTile):
+            return True  # Le mage peut marcher sur l'eau
+            
+        # Vérification si la tuile est solide
+        if tile.is_solide:
+            return False
+            
+        return True  # Le terrain est marchable
+    
 
+    def draw(self, screen):
+        """
+        Dessine la carte sur l'écran.
+        
+        Args:
+        screen: L'écran sur lequel dessiner la carte.
+        """
+        # Parcourt chaque ligne de la carte
+        for y, row in enumerate(self.terrain_data):
+            # Parcourt chaque cellule de la ligne
+            for x, terrain_type in enumerate(row):
+                # Récupère la tuile de terrain associée à ce type de terrain
+                tile = self.terrain_tiles[terrain_type]
+                # Dessine la tuile de terrain à la position correspondante sur l'écran
+                screen.blit(tile.image, (x * self.cell_size, y * self.cell_size))

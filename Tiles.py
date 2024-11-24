@@ -1,14 +1,24 @@
+# Importation des bibliothèques nécessaires
 import pygame
 from constante import GameConstantes as GC
 from abc import ABC, abstractmethod
+from unit import Mage
 
+# Définition d'une classe abstraite pour représenter les types de tuiles
+class TileKind(ABC):
+    """
+    Classe abstraite pour représenter les types de tuiles.
+    
+    Attributes:
+    nom (str): Le nom du type de tuile.
+    image_path (str): Chemin du fichier de l'image représentant le type de tuile.
+    is_solide (bool): Booléen indiquant si le type de tuile est solide (obstacle) ou passable.
+    """
 
-
-class TileKind(ABC): 
-    def __init__(self, nom, image_path, is_solide) :
+    def __init__(self, nom, image_path, is_solide):
         """
         Initialise un objet TileKind.
-
+        
         :param nom: Le nom du type de tuile.
         :param image: Chemin du fichier de l'image représentant le type de tuile.
         :param is_solide: Booléen indiquant si le type de tuile est solide (obstacle) ou passable.
@@ -19,23 +29,76 @@ class TileKind(ABC):
         self.image = pygame.transform.scale(Loaded_image, (GC.CELL_SIZE, GC.CELL_SIZE))
         self.is_solide = is_solide
 
-        def interact(self,unité) : #methode abstraite on l'implementra dans les classes filles (grass, eau, mur)
-            pass 
+    # Méthode abstraite pour interagir avec une unité
+    @abstractmethod
+    def interact(self, unité):
+        """
+        Méthode abstraite pour interagir avec une unité.
+        
+        :param unité: L'unité qui interagit avec la tuile.
+        :return: Booléen indiquant si l'unité peut interagir avec la tuile.
+        """
+        pass
 
-class WalkableTile(TileKind): #class fille de tilekind qui permet de definir les tuiles qui sont passables
-    def __init__(self,nom,image) : 
+# Définition d'une classe pour représenter les tuiles passables
+class WalkableTile(TileKind):
+    """
+    Classe pour représenter les tuiles passables.
+    
+    Attributes:
+    nom (str): Le nom du type de tuile.
+    image (str): Chemin du fichier de l'image représentant le type de tuile.
+    """
+
+    def __init__(self, nom, image):
+        """
+        Initialise un objet WalkableTile.
+        
+        :param nom: Le nom du type de tuile.
+        :param image: Chemin du fichier de l'image représentant le type de tuile.
+        """
         super().__init__(nom, image, False)
-    
-    def interact(self,unité) : 
-        return True # l'unité peut marcher
 
-class UnwalkableTile(TileKind): #class fille de tilekind qui permet de definir les tuiles qui ne sont pas passables
-    def __init__(self,nom,image) : 
+    # Méthode pour interagir avec une unité
+    def interact(self, unité):
+        """
+        Méthode pour interagir avec une unité.
+        
+        :param unité: L'unité qui interagit avec la tuile.
+        :return: Booléen indiquant si l'unité peut interagir avec la tuile.
+        """
+        return True  # l'unité peut marcher
+
+# Définition d'une classe pour représenter les tuiles non passables
+class UnwalkableTile(TileKind):
+    """
+    Classe pour représenter les tuiles non passables.
+    
+    Attributes:
+    nom (str): Le nom du type de tuile.
+    image (str): Chemin du fichier de l'image représentant le type de tuile.
+    """
+
+    def __init__(self, nom, image):
+        """
+        Initialise un objet UnwalkableTile.
+        
+        :param nom: Le nom du type de tuile.
+        :param image: Chemin du fichier de l'image représentant le type de tuile.
+        """
         super().__init__(nom, image, True)
-    
-    def interact(self,unité) : 
-        return False # l'unité ne peut pas marcher
 
+    # Méthode pour interagir avec une unité
+    def interact(self, unité):
+        """
+        Méthode pour interagir avec une unité.
+        
+        :param unité: L'unité qui interagit avec la tuile.
+        :return: Booléen indiquant si l'unité peut interagir avec la tuile.
+        """
+        return False  # l'unité ne peut pas marcher
+
+# Définition de classes pour représenter les différents types de tuiles
 class GrassTile(WalkableTile):
     def __init__(self):
         super().__init__("grass", "image/grass.png")
@@ -43,6 +106,7 @@ class GrassTile(WalkableTile):
 class WaterTile(UnwalkableTile):
     def __init__(self):
         super().__init__("water", "image/water.png")
+       
 
 class RockTile(UnwalkableTile):
     def __init__(self):
@@ -60,42 +124,67 @@ class MountainTile(UnwalkableTile):
     def __init__(self):
         super().__init__("Mountain", "image/mountain.png")
 
+# Définition d'une classe pour représenter la carte
+class Map:
+    """
+    Classe pour représenter la carte.
+    
+    Attributes:
+    tiles_kind (dict): Dictionnaire des types de tuiles.
+    tile_size (int): Taille des tuiles.
+    tiles (list): Liste des tuiles de la carte.
+    """
 
-class Map: 
-    def __init__(self,map_file, tiles_kind, tile_size) : 
+    def __init__(self, map_file, tiles_kind, tile_size):
+        """
+        Initialise un objet Map.
+        
+        :param map_file: Fichier de la carte.
+        :param tiles_kind: Dictionnaire des types de tuiles.
+        :param tile_size: Taille des tuiles.
+        """
         self.tiles_kind = tiles_kind
-        #tile size : 
         self.tile_size = tile_size
-        #load the map file
+        # Chargement du fichier de la carte
         file = open(map_file, "r")
         data = file.read()
         file.close()
-    
-        #donner a chaque caracrtere sa case 
-        self.tiles = [] 
-        #matrice comme ca [0 1 0 1 0]
-        #                 [0 1 0 1 0]
-        #                 [0 1 0 1 0]           
-        for line in data.split("\n") : 
-            row = [] 
-            for tiles_number in line : 
+
+        # Création de la liste des tuiles
+        self.tiles = []
+        for line in data.split("\n"):
+            row = []
+            for tiles_number in line:
                 row.append(int(tiles_number))
             self.tiles.append(row)
 
-         
-
-        #afficher map sur l'ecran :
-    def draw(self, screen) : 
-        for y, row in enumerate(self.tiles) : 
-            for x, tile in enumerate(row) : 
-                location = (x * self.tile_size, y*self.tile_size)
+    # Méthode pour dessiner la carte
+    def draw(self, screen):
+        """
+        Méthode pour dessiner la carte.
+        
+        :param screen: Écran de jeu.
+        """
+        for y, row in enumerate(self.tiles):
+            for x, tile in enumerate(row):
+                location = (x * self.tile_size, y * self.tile_size)
                 image = self.tiles_kind[tile].image
-                screen.blit(image,location) 
+                screen.blit(image, location)
 
-    def is_walkable(self, x, y) : # n'est pas marchable si la case est solide, sinon elle l'est.
-        if not (0 <= x < len(self.tiles[0])  or 0 <= y < len(self.tiles) ): # on doit verifier si la position est dans la map
+    # Méthode pour vérifier si une position est marchable
+    def is_walkable(self, x, y, unité = None ):
+        """
+        Méthode pour vérifier si une position est marchable.
+        
+        :param x: Coordonnée x de la position.
+        :param y: Coordonnée y de la position.
+        :return: Booléen indiquant si la position est marchable.
+        """
+        if not (0 <= x < len(self.tiles[0]) or 0 <= y < len(self.tiles)):
             return False
         tile = self.tiles_kind[self.tiles[y][x]]
+        if isinstance(unité, Mage) and isinstance(tile, WaterTile):
+            return True  # Le mage peut marcher sur l'eau
         if tile.is_solide:
-            return False            
-        return True #marchable
+            return False
+        return True  # marchable
