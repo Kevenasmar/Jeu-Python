@@ -27,15 +27,73 @@ class Game:
         self.screen.blit(log_surface, log_rect)
         pygame.display.flip()
 
+
+    def calculate_valid_cells(self, unit):
+        """Calcule les cases accessibles pour une unité."""
+        valid_cells = []
+        for dx in range(-unit.speed, unit.speed + 1):
+            for dy in range(-unit.speed, unit.speed + 1):
+                if abs(dx) + abs(dy) <= unit.speed:  # Distance de Manhattan
+                    x, y = unit.x + dx, unit.y + dy
+                    if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE:  # Limites de la grille
+                        valid_cells.append((x, y))
+        return valid_cells
+
+    def redraw_static_elements(self):
+        """Redessine la grille et les unités."""
+        # Remplir l'écran de noir
+        self.screen.fill(BLACK)
+
+        # Dessiner la grille
+        for x in range(0, WIDTH, CELL_SIZE):
+            for y in range(0, HEIGHT, CELL_SIZE):
+                rect = pygame.Rect(x, y, CELL_SIZE, CELL_SIZE)
+                pygame.draw.rect(self.screen, WHITE, rect, 1)
+
+        pygame.display.flip()  # Mise à jour une seule fois
+
+
+
+
+    def draw_highlighted_cells(self, valid_cells):
+        """Dessine les cases accessibles et met en surbrillance celle sous le curseur."""
+        # Dessiner les cases accessibles en jaune
+        for x, y in valid_cells:
+            rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+            pygame.draw.rect(self.screen, (255, 255, 0), rect, 0)  # Jaune avec remplissage
+
+        # Récupérer la position de la souris
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        hover_x, hover_y = mouse_x // CELL_SIZE, mouse_y // CELL_SIZE
+
+        # Mettre en surbrillance la case sous le curseur en rouge
+        if (hover_x, hover_y) in valid_cells:
+            hover_rect = pygame.Rect(hover_x * CELL_SIZE, hover_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+            pygame.draw.rect(self.screen, (255, 0, 0), hover_rect, 0)  # Rouge avec remplissage
+
+        # Redessiner les unités pour qu'elles soient toujours au-dessus
+        for unit in self.player_units + self.enemy_units:
+            unit.draw(self.screen)
+
+        pygame.display.update()  # Mise à jour partielle
+
+
+
     def handle_player_turn(self):
-        """Handles the player's turn."""
+        """Gestion du tour du joueur sans scintillement."""
         for selected_unit in self.player_units:
             if self.check_game_over():
                 return
 
             has_acted = False
             selected_unit.is_selected = True
-            self.flip_display()
+
+            # Calculer les cases accessibles au début
+            valid_cells = self.calculate_valid_cells(selected_unit)
+
+            # Dessiner une fois la grille, les unités et les highlights persistants
+            self.redraw_static_elements()  # Grille et unités
+            self.draw_highlighted_cells(valid_cells)
 
             while not has_acted:
                 for event in pygame.event.get():
@@ -44,25 +102,24 @@ class Game:
                         exit()
 
                     if event.type == pygame.MOUSEBUTTONDOWN:
-                        # Get the grid coordinates of the mouse click
                         mouse_x, mouse_y = pygame.mouse.get_pos()
-                        new_x = mouse_x // CELL_SIZE
-                        new_y = mouse_y // CELL_SIZE
-                        
-                        # Attempt to move the unit
-                        if abs(new_x - selected_unit.x) + abs(new_y - selected_unit.y) <= selected_unit.speed:
+                        new_x, new_y = mouse_x // CELL_SIZE, mouse_y // CELL_SIZE
+
+                        # Valider le mouvement dans les cases accessibles
+                        if (new_x, new_y) in valid_cells:
                             selected_unit.move(new_x, new_y)
                             has_acted = True
                             selected_unit.is_selected = False
-                            self.flip_display()
-                        else:
-                            print("Invalid move. Out of range!")
 
                     if event.type == pygame.KEYDOWN:
-                        # Skip turn
-                        if event.key == pygame.K_s:  # 'S' key to skip turn
+                        if event.key == pygame.K_s:  # Passer le tour
                             has_acted = True
                             selected_unit.is_selected = False
+
+                # Redessiner seulement les cases et surbrillance dynamique
+                self.draw_highlighted_cells(valid_cells)
+
+
 
 
     def handle_enemy_turn(self):
