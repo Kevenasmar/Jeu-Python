@@ -15,52 +15,8 @@ GREEN = (0, 255, 0)
 
 
 class Unit:
-    """
-    Classe pour représenter une unité.
-
-    ...
-    Attributs
-    ---------
-    x : int
-        La position x de l'unité sur la grille.
-    y : int
-        La position y de l'unité sur la grille.
-    health : int
-        La santé de l'unité.
-    attack_power : int
-        La puissance d'attaque de l'unité.
-    team : str
-        L'équipe de l'unité ('player' ou 'enemy').
-    is_selected : bool
-        Si l'unité est sélectionnée ou non.
-
-    Méthodes
-    --------
-    move(dx, dy)
-        Déplace l'unité de dx, dy.
-    attack(target)
-        Attaque une unité cible.
-    draw(screen)
-        Dessine l'unité sur la grille.
-    """
 
     def _init_(self, x, y, health, attack, defense, speed, vision, image_path, team):
-        """
-        Construit une unité avec une position, une santé, une puissance d'attaque et une équipe.
-
-        Paramètres
-        ----------
-        x : int
-            La position x de l'unité sur la grille.
-        y : int
-            La position y de l'unité sur la grille.
-        health : int
-            La santé de l'unité.
-        attack_power : int
-            La puissance d'attaque de l'unité.
-        team : str
-            L'équipe de l'unité ('player' ou 'enemy').
-        """
         self.x = x
         self.y = y
         self.health = health
@@ -86,6 +42,70 @@ class Unit:
                              self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
         pygame.draw.circle(screen, color, (self.x * CELL_SIZE + CELL_SIZE //
                            2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
+        
+def move(self, game):
+    '''
+    Allows the unit to move within its speed range.
+    Highlights possible moves and lets the player choose a target position.'''
+    
+    possible_moves = []
+
+    # Calculate possible moves within the speed radius
+    for dx in range(-self.speed, self.speed + 1):
+        for dy in range(-self.speed, self.speed + 1):
+            if abs(dx) + abs(dy) <= self.speed:  # Ensure Manhattan distance is within speed
+                new_x, new_y = self.x + dx, self.y + dy
+                if 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE:
+                    possible_moves.append((new_x, new_y))
+
+    # Allow the player to choose a target position
+    selected_pos = (self.x, self.y)  # Start at the unit's current position
+    selecting = True
+
+    while selecting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:  # Confirm movement
+                    if selected_pos in possible_moves:
+                        self.x, self.y = selected_pos
+                        selecting = False
+
+                # Update selection cursor based on arrow keys
+                elif event.key == pygame.K_UP:
+                    new_selected = (selected_pos[0], selected_pos[1] - 1)
+                    if new_selected in possible_moves:
+                        selected_pos = new_selected
+                elif event.key == pygame.K_DOWN:
+                    new_selected = (selected_pos[0], selected_pos[1] + 1)
+                    if new_selected in possible_moves:
+                        selected_pos = new_selected
+                elif event.key == pygame.K_LEFT:
+                    new_selected = (selected_pos[0] - 1, selected_pos[1])
+                    if new_selected in possible_moves:
+                        selected_pos = new_selected
+                elif event.key == pygame.K_RIGHT:
+                    new_selected = (selected_pos[0] + 1, selected_pos[1])
+                    if new_selected in possible_moves:
+                        selected_pos = new_selected
+
+        # Redraw the grid and highlights
+        game.flip_display()  # Redraw the grid and units
+
+        # Highlight possible moves
+        for pos in possible_moves:
+            highlight_x, highlight_y = pos[0] * CELL_SIZE, pos[1] * CELL_SIZE
+            pygame.draw.rect(game.screen, (0, 255, 0, 128), (highlight_x, highlight_y, CELL_SIZE, CELL_SIZE), 0)
+
+        # Highlight the currently selected position
+        sel_x, sel_y = selected_pos[0] * CELL_SIZE, selected_pos[1] * CELL_SIZE
+        pygame.draw.rect(game.screen, (255, 255, 0, 128), (sel_x, sel_y, CELL_SIZE, CELL_SIZE), 0)
+
+        pygame.display.flip()
+       
 
 
 '''
