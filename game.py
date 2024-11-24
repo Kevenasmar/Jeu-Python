@@ -30,7 +30,7 @@ class Game:
     def handle_player_turn(self):
         """Handles the player's turn."""
         for selected_unit in self.player_units:
-            if self.check_game_over():  # Check if the game is over
+            if self.check_game_over():
                 return
 
             has_acted = False
@@ -43,55 +43,27 @@ class Game:
                         pygame.quit()
                         exit()
 
-                    if event.type == pygame.KEYDOWN:
-                        # Movement
-                        if event.key == pygame.K_m:
-                            selected_unit.move(self)
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        # Get the grid coordinates of the mouse click
+                        mouse_x, mouse_y = pygame.mouse.get_pos()
+                        new_x = mouse_x // CELL_SIZE
+                        new_y = mouse_y // CELL_SIZE
+                        
+                        # Attempt to move the unit
+                        if abs(new_x - selected_unit.x) + abs(new_y - selected_unit.y) <= selected_unit.speed:
+                            selected_unit.move(new_x, new_y)
+                            has_acted = True
+                            selected_unit.is_selected = False
                             self.flip_display()
+                        else:
+                            print("Invalid move. Out of range!")
 
-                        # Attack
-                        if event.key == pygame.K_a:
-                            for enemy in self.enemy_units:
-                                if abs(selected_unit.x - enemy.x) <= selected_unit.range and \
-                                        abs(selected_unit.y - enemy.y) <= selected_unit.range:
-                                    self.display_log(
-                                        f"Choose ability for {selected_unit.__class__.__name__} (1: Basic, 2: Special)"
-                                    )
-                                    ability_chosen = False
+                    if event.type == pygame.KEYDOWN:
+                        # Skip turn
+                        if event.key == pygame.K_s:  # 'S' key to skip turn
+                            has_acted = True
+                            selected_unit.is_selected = False
 
-                                    while not ability_chosen:
-                                        for attack_event in pygame.event.get():
-                                            if attack_event.type == pygame.KEYDOWN:
-                                                if attack_event.key == pygame.K_1:
-                                                    if isinstance(selected_unit, Archer):
-                                                        selected_unit.normal_arrow(enemy)
-                                                        self.display_log(f"{selected_unit.__class__.__name__} used Normal Arrow!")
-                                                    elif isinstance(selected_unit, Giant):
-                                                        selected_unit.punch(enemy)
-                                                        self.display_log(f"{selected_unit.__class__.__name__} used Punch!")
-                                                    elif isinstance(selected_unit, Mage):
-                                                        selected_unit.heal_alies(enemy)
-                                                        self.display_log(f"{selected_unit.__class__.__name__} healed!")
-                                                    ability_chosen = True
-
-                                                elif attack_event.key == pygame.K_2:
-                                                    if isinstance(selected_unit, Archer):
-                                                        selected_unit.fire_arrow(enemy)
-                                                        self.display_log(f"{selected_unit.__class__.__name__} used Fire Arrow!")
-                                                    elif isinstance(selected_unit, Giant):
-                                                        selected_unit.stomp(enemy)
-                                                        self.display_log(f"{selected_unit.__class__.__name__} used Stomp!")
-                                                    elif isinstance(selected_unit, Mage):
-                                                        self.display_log(f"{selected_unit.__class__.__name__} used a special ability!")
-                                                    ability_chosen = True
-
-                                                if enemy.health <= 0:
-                                                    self.enemy_units.remove(enemy)
-                                                    self.display_log(f"{enemy.__class__.__name__} was defeated!")
-                                                    ability_chosen = True
-
-                                    has_acted = True
-                                    selected_unit.is_selected = False
 
     def handle_enemy_turn(self):
         """Simple AI for the enemy's turn."""
@@ -99,10 +71,18 @@ class Game:
             if self.check_game_over():  # Check if the game is over
                 return
 
+            # Random movement logic for simplicity
             target = random.choice(self.player_units)
             dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
             dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
-            enemy.move(self)
+            new_x = enemy.x + dx
+            new_y = enemy.y + dy
+
+            # Ensure the movement is valid within the grid and speed
+            if abs(new_x - enemy.x) + abs(new_y - enemy.y) <= enemy.speed:
+                enemy.move(new_x, new_y)
+
+            # Attack if in range
             if abs(enemy.x - target.x) <= enemy.range and abs(enemy.y - target.y) <= enemy.range:
                 enemy.attack(target)
                 self.display_log(f"{enemy.__class__.__name__} attacked {target.__class__.__name__}!")
@@ -145,7 +125,6 @@ class Game:
         pygame.quit()
         exit()
         
-
 
 def main():
     pygame.init()
