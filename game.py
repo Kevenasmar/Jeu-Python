@@ -20,15 +20,15 @@ class Game:
     def __init__(self, screen):
         self.screen = screen
         self.player_units = [
-            Archer(0, 0, 100, 5, 2, 3, 1, 'C:/Users/keven/OneDrive/Desktop/Jeu python/Photos/archer.jpg', 'player'),
-            Mage(1, 0, 100, 3, 1, 1, 1, 'C:/Users/keven/OneDrive/Desktop/Jeu python/Photos/mage.jpg', 'player'),
-            Giant(2, 0, 100, 10, 1, 1, 3, 'C:/Users/keven/OneDrive/Desktop/Jeu python/Photos/giant.jpg', 'player')
+            Archer(0, 0, 100, 5, 2, 3, 1, 'Photos/archer.jpg', 'player'),
+            Mage(1, 0, 100, 3, 1, 1, 1, 'Photos/mage.jpg', 'player'),
+            Giant(2, 0, 100, 10, 1, 1, 3, 'Photos/giant.jpg', 'player')
         ]
 
         self.enemy_units = [
-            Archer(5, 6, 100, 5, 2, 3, 1, 'C:/Users/keven/OneDrive/Desktop/Jeu python/Photos/enemy_archer.jpg', 'enemy'),
-            Mage(6, 6, 100, 3, 1, 1, 1, 'C:/Users/keven/OneDrive/Desktop/Jeu python/Photos/enemy_mage.png', 'enemy'),
-            Giant(7, 6, 100, 10, 1, 1, 3, 'C:/Users/keven/OneDrive/Desktop/Jeu python/Photos/enemy_giant.png', 'enemy')
+            Archer(5, 6, 100, 5, 2, 3, 1, 'Photos/enemy_archer.jpg', 'enemy'),
+            Mage(6, 6, 100, 3, 1, 1, 1, 'Photos/enemy_mage.png', 'enemy'),
+            Giant(7, 6, 100, 10, 1, 1, 3, 'Photos/enemy_giant.png', 'enemy')
         ]
         self.logs = []  # Store game logs
 
