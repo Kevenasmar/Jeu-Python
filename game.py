@@ -20,15 +20,16 @@ class Game:
     def __init__(self, screen):
         self.screen = screen
         self.player_units = [
-            Archer(0, 0, 100, 5, 2, 3, 1, 'C:/Users/keven/OneDrive/Desktop/Jeu python/Photos/archer.jpg', 'player'),
-            Mage(1, 0, 100, 3, 1, 1, 1, 'C:/Users/keven/OneDrive/Desktop/Jeu python/Photos/mage.jpg', 'player'),
-            Giant(2, 0, 100, 10, 1, 1, 3, 'C:/Users/keven/OneDrive/Desktop/Jeu python/Photos/giant.jpg', 'player')
+           #       (x, y, health, attack, defense, speed, vision, image_path, team)
+            Archer(0, 0, 100, 5, 2, 2, 3, 'Photos/archer.jpg', 'player'),
+            Mage(1, 0, 100, 3, 1, 1, 2, 'Photos/mage.jpg', 'player'),
+            Giant(2, 0, 100, 10, 1, 1, 2, 'Photos/giant.jpg', 'player')
         ]
 
         self.enemy_units = [
-            Archer(5, 6, 100, 5, 2, 3, 1, 'C:/Users/keven/OneDrive/Desktop/Jeu python/Photos/enemy_archer.jpg', 'enemy'),
-            Mage(6, 6, 100, 3, 1, 1, 1, 'C:/Users/keven/OneDrive/Desktop/Jeu python/Photos/enemy_mage.png', 'enemy'),
-            Giant(7, 6, 100, 10, 1, 1, 3, 'C:/Users/keven/OneDrive/Desktop/Jeu python/Photos/enemy_giant.png', 'enemy')
+            Archer(5, 6, 100, 5, 2, 2, 3, 'Photos/enemy_archer.jpg', 'enemy'),
+            Mage(6, 6, 100, 3, 1, 1, 2, 'Photos/enemy_mage.png', 'enemy'),
+            Giant(7, 6, 100, 10, 1, 1, 2, 'Photos/enemy_giant.png', 'enemy')
         ]
         self.logs = []  # Store game logs
 
@@ -61,37 +62,39 @@ class Game:
                     if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE:  # Grid limits
                         valid_cells.append((x, y))
         return valid_cells
+    
+    def get_vision_cells(self, unit):
+        """Retourne une liste des cellules dans la zone de vision de l'unité."""
+        vision_cells = []
+        for dx in range(-unit.vision, unit.vision + 1):
+            for dy in range(-unit.vision, unit.vision + 1):
+                if dx**2 + dy**2 <= unit.vision**2:  # Vérifie que la cellule est dans le cercle
+                    x, y = unit.x + dx, unit.y + dy
+                    if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE:  # Vérifie les limites de la grille
+                        vision_cells.append((x, y))
+        return vision_cells
 
-    def draw_static_elements(self, valid_cells):
-        """
-        Redraw the grid, log area, and highlight the cell under the cursor in red 
-        if it is within the valid movement cells.
-        """
+
+    def draw_static_elements(self, valid_cells=[], vision_cells=[]):
+        """Redessine la grille, la zone de vision, et la zone de déplacement."""
         self.screen.fill(BLACK)
 
-        # Draw grid
+        # Dessine la grille
         for x in range(0, MAP_WIDTH, CELL_SIZE):
             for y in range(0, TOTAL_HEIGHT, CELL_SIZE):
                 rect = pygame.Rect(x, y, CELL_SIZE, CELL_SIZE)
                 pygame.draw.rect(self.screen, WHITE, rect, 1)
 
-        # Highlight valid cells in yellow
+        # Surligne la zone de vision en gris
+        for x, y in vision_cells:
+            vision_rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+            pygame.draw.rect(self.screen, (150, 150, 150), vision_rect, 0)
+
+        # Surligne la zone de déplacement en jaune
         for x, y in valid_cells:
             valid_rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-            pygame.draw.rect(self.screen, (255, 255, 0), valid_rect, 0)  # Filled yellow
+            pygame.draw.rect(self.screen, (255, 255, 0), valid_rect, 0)
 
-        # Highlight the cell under the mouse cursor in red if valid
-        mouse_x, mouse_y = pygame.mouse.get_pos()
-        cursor_x, cursor_y = mouse_x // CELL_SIZE, mouse_y // CELL_SIZE
-
-        if (cursor_x, cursor_y) in valid_cells:
-            highlight_rect = pygame.Rect(cursor_x * CELL_SIZE, cursor_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-            pygame.draw.rect(self.screen, RED, highlight_rect, 0)  # Filled red for the cursor
-
-        # Draw log section
-        log_x = MAP_WIDTH  # Start of the log area (right after the game map)
-        pygame.draw.rect(self.screen, BLACK, (log_x, 0, LOG_WIDTH, TOTAL_HEIGHT))  # Log area background
-        pygame.draw.rect(self.screen, WHITE, (log_x, 0, LOG_WIDTH, TOTAL_HEIGHT), 2)  # Log area border
 
 
     def draw_highlighted_cells(self, valid_cells, selected_unit):
@@ -115,14 +118,25 @@ class Game:
                 return
 
             has_acted = False
-            valid_cells = self.calculate_valid_cells(selected_unit)
+            valid_cells = self.calculate_valid_cells(selected_unit)  # Movement area
+            vision_cells = self.get_vision_cells(selected_unit)  # Vision area
 
             while not has_acted:
-                # Redraw everything: grid, valid cells, and units
-                self.draw_static_elements(valid_cells)
+                # Redraw the grid, vision area, movement area, and units
+                self.draw_static_elements(valid_cells, vision_cells)
+
+                # Highlight the cursor in red only on walkable cells
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                cursor_x, cursor_y = mouse_x // CELL_SIZE, mouse_y // CELL_SIZE
+                if (cursor_x, cursor_y) in valid_cells:  # Only draw cursor if it's in a walkable cell
+                    cursor_rect = pygame.Rect(cursor_x * CELL_SIZE, cursor_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+                    pygame.draw.rect(self.screen, RED, cursor_rect, 0)  # Red fill for the cursor
+
+                # Draw all units
                 for unit in self.player_units + self.enemy_units:
-                    unit.draw(self.screen)  # Redraw all units
-                pygame.display.flip()  # Update the screen
+                    unit.draw(self.screen)
+
+                pygame.display.flip()
 
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
@@ -132,12 +146,24 @@ class Game:
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         mouse_x, mouse_y = pygame.mouse.get_pos()
                         new_x, new_y = mouse_x // CELL_SIZE, mouse_y // CELL_SIZE
-                        if (new_x, new_y) in valid_cells:  # Validate move
+
+                        # Movement
+                        if (new_x, new_y) in valid_cells:
                             selected_unit.move(new_x, new_y)
                             has_acted = True
 
+                        # Attack
+                        for enemy in self.enemy_units:
+                            if enemy.x == new_x and enemy.y == new_y and (enemy.x, enemy.y) in vision_cells:
+                                self.attack(selected_unit, enemy)
+                                has_acted = True
+
                     elif event.type == pygame.KEYDOWN and event.key == pygame.K_s:  # Skip turn
                         has_acted = True
+
+
+
+
 
     def handle_enemy_turn(self):
         """Handles the enemy player's turn by moving enemy units toward the nearest player unit."""

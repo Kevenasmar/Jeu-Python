@@ -33,10 +33,21 @@ class Unit:
         self.team = team  # 'joueur' ou 'ennemi'
         self.is_selected = False
 
-    def attack(self, target):
-        """Attaque une unité cible."""
-        if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
-            target.health -= self.attack_power
+    def attack(self, attacker, target):
+        """Gère l'attaque d'une unité sur une cible."""
+        target.health -= attacker.attack_power  # Applique les dégâts
+
+        if target.health <= 0:
+            target.health = 0
+            if target in self.player_units:
+                self.player_units.remove(target)
+            elif target in self.enemy_units:
+                self.enemy_units.remove(target)
+            self.add_log(f"{attacker.__class__.__name__} a tué {target.__class__.__name__}!")
+        else:
+            self.add_log(f"{attacker.__class__.__name__} a attaqué {target.__class__.__name__} pour {attacker.attack_power} dégâts!")
+
+
 
     def draw(self, screen):
         """
