@@ -62,8 +62,11 @@ class Game:
                         valid_cells.append((x, y))
         return valid_cells
 
-    def draw_static_elements(self):
-        """Redraw the grid and log area."""
+    def draw_static_elements(self, valid_cells):
+        """
+        Redraw the grid, log area, and highlight the cell under the cursor in red 
+        if it is within the valid movement cells.
+        """
         self.screen.fill(BLACK)
 
         # Draw grid
@@ -71,6 +74,19 @@ class Game:
             for y in range(0, TOTAL_HEIGHT, CELL_SIZE):
                 rect = pygame.Rect(x, y, CELL_SIZE, CELL_SIZE)
                 pygame.draw.rect(self.screen, WHITE, rect, 1)
+
+        # Highlight valid cells in yellow
+        for x, y in valid_cells:
+            valid_rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+            pygame.draw.rect(self.screen, (255, 255, 0), valid_rect, 0)  # Filled yellow
+
+        # Highlight the cell under the mouse cursor in red if valid
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        cursor_x, cursor_y = mouse_x // CELL_SIZE, mouse_y // CELL_SIZE
+
+        if (cursor_x, cursor_y) in valid_cells:
+            highlight_rect = pygame.Rect(cursor_x * CELL_SIZE, cursor_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+            pygame.draw.rect(self.screen, RED, highlight_rect, 0)  # Filled red for the cursor
 
         # Draw log section
         log_x = MAP_WIDTH  # Start of the log area (right after the game map)
@@ -93,7 +109,7 @@ class Game:
             unit.draw(self.screen)
 
     def handle_player_turn(self):
-        """Handle the player's turn."""
+        """Handles the player's turn."""
         for selected_unit in self.player_units:
             if self.check_game_over():
                 return
@@ -102,46 +118,61 @@ class Game:
             valid_cells = self.calculate_valid_cells(selected_unit)
 
             while not has_acted:
-                self.draw_static_elements()
-                self.display_logs()
-                self.draw_highlighted_cells(valid_cells, selected_unit)
-                pygame.display.flip()
+                # Redraw everything: grid, valid cells, and units
+                self.draw_static_elements(valid_cells)
+                for unit in self.player_units + self.enemy_units:
+                    unit.draw(self.screen)  # Redraw all units
+                pygame.display.flip()  # Update the screen
 
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         pygame.quit()
                         exit()
+
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         mouse_x, mouse_y = pygame.mouse.get_pos()
                         new_x, new_y = mouse_x // CELL_SIZE, mouse_y // CELL_SIZE
-                        if (new_x, new_y) in valid_cells:
+                        if (new_x, new_y) in valid_cells:  # Validate move
                             selected_unit.move(new_x, new_y)
-                            self.add_log(f"{selected_unit.__class__.__name__} moved to ({new_x}, {new_y})")
                             has_acted = True
-                    if event.type == pygame.KEYDOWN and event.key == pygame.K_s:
-                        self.add_log(f"{selected_unit.__class__.__name__} skipped their turn")
+
+                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_s:  # Skip turn
                         has_acted = True
 
     def handle_enemy_turn(self):
-        """Handle the enemy's turn."""
-        for enemy in self.enemy_units:
+        """Handles the enemy player's turn by moving enemy units toward the nearest player unit."""
+        for enemy_unit in self.enemy_units:
             if self.check_game_over():
                 return
 
-            target = random.choice(self.player_units)
-            dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
-            dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
+            # Find the nearest player unit
+            nearest_player = None
+            min_distance = float('inf')
 
-            if abs(dx) + abs(dy) <= enemy.speed:
-                enemy.move(enemy.x + dx, enemy.y + dy)
-                self.add_log(f"{enemy.__class__.__name__} moved closer to {target.__class__.__name__}")
+            for player_unit in self.player_units:
+                distance = abs(enemy_unit.x - player_unit.x) + abs(enemy_unit.y - player_unit.y)
+                if distance < min_distance:
+                    min_distance = distance
+                    nearest_player = player_unit
 
-            if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
-                enemy.attack(target)
-                self.add_log(f"{enemy.__class__.__name__} attacked {target.__class__.__name__}!")
-                if target.health <= 0:
-                    self.player_units.remove(target)
-                    self.add_log(f"{target.__class__.__name__} was defeated!")
+            if nearest_player:
+                # Determine movement direction toward the nearest player
+                dx = 1 if enemy_unit.x < nearest_player.x else -1 if enemy_unit.x > nearest_player.x else 0
+                dy = 1 if enemy_unit.y < nearest_player.y else -1 if enemy_unit.y > nearest_player.y else 0
+                new_x, new_y = enemy_unit.x + dx, enemy_unit.y + dy
+
+                # Ensure the move is valid (within grid bounds and unit speed)
+                if abs(dx) + abs(dy) <= enemy_unit.speed and 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE:
+                    enemy_unit.move(new_x, new_y)
+
+                # Redraw the game after the enemy moves
+                self.draw_static_elements([])
+                for unit in self.player_units + self.enemy_units:
+                    unit.draw(self.screen)
+                pygame.display.flip()
+
+
+
 
     def check_game_over(self):
         """Check if the game is over."""
@@ -157,7 +188,7 @@ class Game:
         """Display the game over message."""
         font = pygame.font.Font(None, 72)
         game_over_surface = font.render(message, True, RED)
-        game_over_rect = game_over_surface.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+        game_over_rect = game_over_surface.get_rect(center=(MAP_WIDTH// 2, TOTAL_HEIGHT // 2))
         self.screen.blit(game_over_surface, game_over_rect)
         pygame.display.flip()
         pygame.time.wait(3000)
