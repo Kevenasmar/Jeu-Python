@@ -1,11 +1,15 @@
 import pygame
 import random
 
-# Constantes
-GRID_SIZE = 8
-CELL_SIZE = 60
-WIDTH = GRID_SIZE * CELL_SIZE
-HEIGHT = GRID_SIZE * CELL_SIZE
+GRID_SIZE = 16  # 16x16 map
+LOG_WIDTH_CELLS = 8  # Log area width in cells
+CELL_SIZE = 45  # Size of each cell
+
+# Dimensions
+MAP_WIDTH = GRID_SIZE * CELL_SIZE  # Width of the map in pixels
+LOG_WIDTH = LOG_WIDTH_CELLS * CELL_SIZE  # Width of the log area in pixels
+TOTAL_WIDTH = MAP_WIDTH + LOG_WIDTH  # Total width of the screen
+TOTAL_HEIGHT = GRID_SIZE * CELL_SIZE  # Height of the screen
 FPS = 30
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -50,6 +54,9 @@ class Unit:
         image_rect = self.image.get_rect()
         image_rect.center = (self.x * CELL_SIZE + CELL_SIZE // 2, self.y * CELL_SIZE + CELL_SIZE // 2)
         screen.blit(self.image, image_rect)
+
+        # Dessiner la barre de santé
+        self.draw_healthbar(screen, self.health)
 
         
     def draw_healthbar(self, screen, health):
