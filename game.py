@@ -192,7 +192,7 @@ class Game:
 def main():
     pygame.init()
     clock = pygame.time.Clock()
-    WEIGHTS = [35, 40, 10, 40, 10, 10]
+    WEIGHTS = [325, 40, 10, 40, 10, 10]
     random_seed = random.randint(0, 1000)
 
     world = World(GC.WORLD_X, GC.WORLD_Y, random_seed)
