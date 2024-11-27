@@ -171,8 +171,25 @@ class Game:
                     unit.draw(self.screen)
                 pygame.display.flip()
 
+    def flip_display(self):
+        """Renders the game state with health bars."""
+        # Fill the screen with black
+        self.screen.fill(BLACK)
 
+        # Draw the grid
+        for x in range(0, MAP_WIDTH, CELL_SIZE):
+            for y in range(0, TOTAL_HEIGHT, CELL_SIZE):
+                rect = pygame.Rect(x, y, CELL_SIZE, CELL_SIZE)
+                pygame.draw.rect(self.screen, WHITE, rect, 1)
 
+        # Draw units and their health bars
+        for unit in self.player_units + self.enemy_units:
+            unit.draw(self.screen)  # Draw the unit image and selection
+            unit.draw_healthbar(self.screen, unit.health)  # Draw the health bar
+
+        # Update the display
+        pygame.display.flip()
+        
 
     def check_game_over(self):
         """Check if the game is over."""
