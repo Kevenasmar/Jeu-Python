@@ -1,6 +1,6 @@
 # cette classe est pour génerer les maps aléatroirement : 
-from perlin_noise import PerlinNoise
-from Tiles import*
+from perlinNoise import PerlinNoise
+from Tiles import *
 from configureWorld import*
 
 

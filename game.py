@@ -21,22 +21,16 @@ class Game:
     def __init__(self, screen, tile_map):
         self.screen = screen
         self.player_units = [
-           #       (x, y, health, attack, defense, speed, vision, image_path, team)
+           #(x, y, health, attack, defense, speed, vision, image_path, team)
             Archer(0, 0, 100, 5, 2, 2, 3, 'Photos/archer.jpg', 'player'),
             Mage(1, 0, 100, 3, 1, 1, 2, 'Photos/mage.jpg', 'player'),
             Giant(2, 0, 100, 10, 1, 1, 2, 'Photos/giant.jpg', 'player')
-            Archer(0, 0, 100, 5, 2, 3, 1, 'Photos/archer.jpg', 'player'),
-            Mage(1, 0, 100, 3, 1, 1, 1, 'Photos/mage.jpg', 'player'),
-            Giant(2, 0, 150, 10, 1, 1, 3, 'Photos/giant.jpg', 'player')
         ]
 
         self.enemy_units = [
             Archer(5, 6, 100, 5, 2, 2, 3, 'Photos/enemy_archer.jpg', 'enemy'),
             Mage(6, 6, 100, 3, 1, 1, 2, 'Photos/enemy_mage.png', 'enemy'),
             Giant(7, 6, 100, 10, 1, 1, 2, 'Photos/enemy_giant.png', 'enemy')
-            Archer(5, 6, 100, 5, 2, 3, 1, 'Photos/enemy_archer.png', 'enemy'),
-            Mage(6, 6, 100, 3, 1, 1, 1, 'Photos/enemy_mage.png', 'enemy'),
-            Giant(7, 6, 150, 10, 1, 1, 3, 'Photos/enemy_giant.png', 'enemy')
         ]
 
         self.tile_map = Map_Aleatoire(tile_map, TERRAIN_TILES, GC.CELL_SIZE)
