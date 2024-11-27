@@ -53,6 +53,7 @@ class Game:
 
     def calculate_valid_cells(self, unit):
         """Calculate accessible cells for a unit, excluding occupied cells."""
+        """Calculate accessible cells for a unit, excluding occupied cells."""
         valid_cells = []
 
         # Combine all units on the grid
@@ -61,7 +62,12 @@ class Game:
         for dx in range(-unit.speed, unit.speed + 1):
             for dy in range(-unit.speed, unit.speed + 1):
                 if abs(dx) + abs(dy) <= unit.speed:  # Manhattan distance
+                if abs(dx) + abs(dy) <= unit.speed:  # Manhattan distance
                     x, y = unit.x + dx, unit.y + dy
+                    if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE:  # Within grid boundaries
+                        # Only add the cell if it is not occupied
+                        if (x, y) not in all_units_positions:
+                            valid_cells.append((x, y))
                     if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE:  # Within grid boundaries
                         # Only add the cell if it is not occupied
                         if (x, y) not in all_units_positions:
