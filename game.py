@@ -44,16 +44,24 @@ class Game:
         pygame.display.flip()
 
     def calculate_valid_cells(self, unit):
-        """Calculate accessible cells for a unit."""
+        """Calculate accessible cells for a unit, excluding cells occupied by other units within its speed range."""
         valid_cells = []
+        # Combine all units' positions
+        all_units_positions = {(u.x, u.y) for u in self.player_units + self.enemy_units}
+
         for dx in range(-unit.speed, unit.speed + 1):
             for dy in range(-unit.speed, unit.speed + 1):
                 if abs(dx) + abs(dy) <= unit.speed:  # Manhattan distance
                     x, y = unit.x + dx, unit.y + dy
-                    if 0 <= x < GC.WORLD_X and 0 <= y < GC.WORLD_Y:
-                        if self.tile_map.is_walkable(x, y, unit):  # Vérification de la marchabilité
-                            valid_cells.append((x, y))                       
+                    if (
+                        0 <= x < GC.WORLD_X and 0 <= y < GC.WORLD_Y  # Within grid bounds
+                        and self.tile_map.is_walkable(x, y, unit)    # Tile is walkable
+                        and (x, y) not in all_units_positions        # Not occupied by another unit
+                    ):
+                        valid_cells.append((x, y))
+
         return valid_cells
+
 
     def redraw_static_elements(self):
         """Redraw the grid and units."""
