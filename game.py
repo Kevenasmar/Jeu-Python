@@ -52,15 +52,22 @@ class Game:
         self.logs.append(message)
 
     def calculate_valid_cells(self, unit):
-        """Calculate accessible cells for a unit."""
+        """Calculate accessible cells for a unit, excluding occupied cells."""
         valid_cells = []
+
+        # Combine all units on the grid
+        all_units_positions = {(u.x, u.y) for u in self.player_units + self.enemy_units}
+
         for dx in range(-unit.speed, unit.speed + 1):
             for dy in range(-unit.speed, unit.speed + 1):
                 if abs(dx) + abs(dy) <= unit.speed:  # Manhattan distance
                     x, y = unit.x + dx, unit.y + dy
-                    if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE:  # Grid limits
-                        valid_cells.append((x, y))
+                    if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE:  # Within grid boundaries
+                        # Only add the cell if it is not occupied
+                        if (x, y) not in all_units_positions:
+                            valid_cells.append((x, y))
         return valid_cells
+
 
     def draw_static_elements(self, valid_cells):
         """
