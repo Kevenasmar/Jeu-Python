@@ -1,55 +1,46 @@
 import pygame
 import random
+
 from unit import *
+from Tiles import *
+from constante import GameConstantes as GC
+from configureWorld import*
+from World_Drawer import *
+from world import*
 
-# Constants for the game layout
-GRID_SIZE = 16  # 16x16 map
-LOG_WIDTH_CELLS = 8  # Log area width in cells
-CELL_SIZE = 45  # Size of each cell
+# Setup tiles
+tiles_kind = [
+    SandTile(),  # False veut dire que la case n'est pas solide tu peux marcher
+    RockTile(),
+    WaterTile()
+]
 
-# Dimensions
-MAP_WIDTH = GRID_SIZE * CELL_SIZE  # Width of the map in pixels
-LOG_WIDTH = LOG_WIDTH_CELLS * CELL_SIZE  # Width of the log area in pixels
-TOTAL_WIDTH = MAP_WIDTH + LOG_WIDTH  # Total width of the screen
-TOTAL_HEIGHT = GRID_SIZE * CELL_SIZE  # Height of the screen
-
-BLACK, WHITE, RED, GREEN = (0, 0, 0), (255, 255, 255), (255, 0, 0), (0, 255, 0)
-
+map = Map("map/start.map", tiles_kind, GC.CELL_SIZE)
 
 class Game:
-    def __init__(self, screen):
+    def __init__(self, screen, tile_map):
         self.screen = screen
         self.player_units = [
-            Archer(0, 0, 100, 5, 2, 3, 1, 'C:/Users/keven/OneDrive/Desktop/Jeu python/Photos/archer.jpg', 'player'),
-            Mage(1, 0, 100, 3, 1, 1, 1, 'C:/Users/keven/OneDrive/Desktop/Jeu python/Photos/mage.jpg', 'player'),
-            Giant(2, 0, 100, 10, 1, 1, 3, 'C:/Users/keven/OneDrive/Desktop/Jeu python/Photos/giant.jpg', 'player')
+            Archer(0, 0, 100, 5, 2, 3, 1, 'Photos/archer.jpg', 'player'),
+            Mage(1, 0, 100, 3, 1, 1, 1, 'Photos/mage.jpg', 'player'),
+            Giant(2, 0, 150, 10, 1, 1, 3, 'Photos/giant.jpg', 'player')
         ]
 
         self.enemy_units = [
-            Archer(5, 6, 100, 5, 2, 3, 1, 'C:/Users/keven/OneDrive/Desktop/Jeu python/Photos/enemy_archer.jpg', 'enemy'),
-            Mage(6, 6, 100, 3, 1, 1, 1, 'C:/Users/keven/OneDrive/Desktop/Jeu python/Photos/enemy_mage.png', 'enemy'),
-            Giant(7, 6, 100, 10, 1, 1, 3, 'C:/Users/keven/OneDrive/Desktop/Jeu python/Photos/enemy_giant.png', 'enemy')
+            Archer(5, 6, 100, 5, 2, 3, 1, 'Photos/enemy_archer.png', 'enemy'),
+            Mage(6, 6, 100, 3, 1, 1, 1, 'Photos/enemy_mage.png', 'enemy'),
+            Giant(7, 6, 150, 10, 1, 1, 3, 'Photos/enemy_giant.png', 'enemy')
         ]
-        self.logs = []  # Store game logs
 
-    def display_logs(self):
-        """Displays game logs in the log area (right side)."""
-        font = pygame.font.Font(None, 24)
-        log_x = MAP_WIDTH  # Start of the log area (to the right of the map)
-        log_y = 0
+        self.tile_map = Map_Aleatoire(tile_map, TERRAIN_TILES, GC.CELL_SIZE)
 
-        # Draw background for log area
-        pygame.draw.rect(self.screen, BLACK, (log_x, 0, LOG_WIDTH, TOTAL_HEIGHT))
-
-        # Render each log message
-        for i, log in enumerate(self.logs[-16:]):  # Show up to 16 logs
-            log_surface = font.render(log, True, WHITE)
-            self.screen.blit(log_surface, (log_x + 10, log_y + i * CELL_SIZE))
-
-
-    def add_log(self, message):
-        """Adds a log message."""
-        self.logs.append(message)
+    def display_log(self, message):
+        """Displays a game log at the bottom of the screen."""
+        font = pygame.font.Font(None, 36)
+        log_surface = font.render(message, True, (255, 255, 255))  # Assuming WHITE is defined
+        log_rect = log_surface.get_rect(center=(GC.WIDTH // 2, GC.HEIGHT + 20))
+        self.screen.blit(log_surface, log_rect)
+        pygame.display.flip()
 
     def calculate_valid_cells(self, unit):
         """Calculate accessible cells for a unit."""
@@ -58,72 +49,79 @@ class Game:
             for dy in range(-unit.speed, unit.speed + 1):
                 if abs(dx) + abs(dy) <= unit.speed:  # Manhattan distance
                     x, y = unit.x + dx, unit.y + dy
-                    if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE:  # Grid limits
-                        valid_cells.append((x, y))
+                    if 0 <= x < GC.WORLD_X and 0 <= y < GC.WORLD_Y:
+                        if self.tile_map.is_walkable(x, y, unit):  # Vérification de la marchabilité
+                            valid_cells.append((x, y))                       
         return valid_cells
 
-    def draw_static_elements(self, valid_cells):
-        """
-        Redraw the grid, log area, and highlight the cell under the cursor in red 
-        if it is within the valid movement cells.
-        """
-        self.screen.fill(BLACK)
+    def redraw_static_elements(self):
+        """Redraw the grid and units."""
+        self.screen.fill(GC.GREEN)  # Fill the screen with GREEN
+        self.tile_map.draw(self.screen)
+        # Draw the grid
+        for x in range(0, GC.WIDTH, GC.CELL_SIZE):
+            for y in range(0, GC.HEIGHT, GC.CELL_SIZE):
+                rect = pygame.Rect(x, y, GC.CELL_SIZE, GC.CELL_SIZE)
+                pygame.draw.rect(self.screen, (255, 255, 255), rect, 1)
 
-        # Draw grid
-        for x in range(0, MAP_WIDTH, CELL_SIZE):
-            for y in range(0, TOTAL_HEIGHT, CELL_SIZE):
-                rect = pygame.Rect(x, y, CELL_SIZE, CELL_SIZE)
-                pygame.draw.rect(self.screen, WHITE, rect, 1)
+        pygame.display.flip()  # Update once
+    
+    def flip_display(self):
+        """Renders the game state."""
+        self.screen.fill(GC.GREEN) # Fill the screen with black
+        self.tile_map.draw(self.screen)  # Draw the map
 
-        # Highlight valid cells in yellow
+        for unit in self.player_units + self.enemy_units:
+            unit.draw(self.screen)  # Draw units
+
+        pygame.display.flip()  # Update the display
+
+    def draw_highlighted_cells(self, valid_cells):
+        """Draw accessible cells and highlight the one under the cursor with transparency."""
+        # Create transparent surfaces
+        valid_cell_surface = pygame.Surface((GC.CELL_SIZE, GC.CELL_SIZE), pygame.SRCALPHA)
+        valid_cell_surface.fill((0, 0, 0, 0))  # Surface complètement transparente
+        pygame.draw.rect(valid_cell_surface, (255, 255, 120), valid_cell_surface.get_rect())
+
+        hover_surface = pygame.Surface((GC.CELL_SIZE, GC.CELL_SIZE), pygame.SRCALPHA)
+        hover_surface.fill((0, 0, 0, 0))  # Surface complètement transparente
+        pygame.draw.rect(hover_surface, (255, 0, 0, 128), hover_surface.get_rect())
+
+        # Draw valid cells
         for x, y in valid_cells:
-            valid_rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-            pygame.draw.rect(self.screen, (255, 255, 0), valid_rect, 0)  # Filled yellow
+            rect = pygame.Rect(x * GC.CELL_SIZE, y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE)
+            self.screen.blit(valid_cell_surface, rect.topleft)
 
-        # Highlight the cell under the mouse cursor in red if valid
+        # Get mouse position and check hover
         mouse_x, mouse_y = pygame.mouse.get_pos()
-        cursor_x, cursor_y = mouse_x // CELL_SIZE, mouse_y // CELL_SIZE
+        hover_x, hover_y = mouse_x // GC.CELL_SIZE, mouse_y // GC.CELL_SIZE
 
-        if (cursor_x, cursor_y) in valid_cells:
-            highlight_rect = pygame.Rect(cursor_x * CELL_SIZE, cursor_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-            pygame.draw.rect(self.screen, RED, highlight_rect, 0)  # Filled red for the cursor
+        # Highlight hovered cell if it's a valid cell
+        if (hover_x, hover_y) in valid_cells:
+            hover_rect = pygame.Rect(hover_x * GC.CELL_SIZE, hover_y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE)
+            self.screen.blit(hover_surface, hover_rect.topleft)
 
-        # Draw log section
-        log_x = MAP_WIDTH  # Start of the log area (right after the game map)
-        pygame.draw.rect(self.screen, BLACK, (log_x, 0, LOG_WIDTH, TOTAL_HEIGHT))  # Log area background
-        pygame.draw.rect(self.screen, WHITE, (log_x, 0, LOG_WIDTH, TOTAL_HEIGHT), 2)  # Log area border
-
-
-    def draw_highlighted_cells(self, valid_cells, selected_unit):
-        """Highlight accessible cells and the selected unit."""
-        for x, y in valid_cells:
-            rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-            pygame.draw.rect(self.screen, (255, 255, 0), rect, 0)  # Yellow fill
-
-        # Highlight the selected unit in green
-        rect = pygame.Rect(selected_unit.x * CELL_SIZE, selected_unit.y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-        pygame.draw.rect(self.screen, GREEN, rect, 2)
-
-        # Redraw units
+        # Redraw all units
         for unit in self.player_units + self.enemy_units:
             unit.draw(self.screen)
 
+        # Update display
+        pygame.display.update()
+
+
     def handle_player_turn(self):
-        """Handles the player's turn."""
+        """Handle the player's turn without flickering."""
         for selected_unit in self.player_units:
             if self.check_game_over():
-                return
+                return has_acted == False
+            selected_unit.is_selected == True
 
-            has_acted = False
             valid_cells = self.calculate_valid_cells(selected_unit)
 
+            self.redraw_static_elements()  # Grid and units
+            self.draw_highlighted_cells(valid_cells)
+            has_acted = False
             while not has_acted:
-                # Redraw everything: grid, valid cells, and units
-                self.draw_static_elements(valid_cells)
-                for unit in self.player_units + self.enemy_units:
-                    unit.draw(self.screen)  # Redraw all units
-                pygame.display.flip()  # Update the screen
-
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         pygame.quit()
@@ -131,51 +129,46 @@ class Game:
 
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         mouse_x, mouse_y = pygame.mouse.get_pos()
-                        new_x, new_y = mouse_x // CELL_SIZE, mouse_y // CELL_SIZE
-                        if (new_x, new_y) in valid_cells:  # Validate move
+                        new_x, new_y = mouse_x // GC.CELL_SIZE, mouse_y // GC.CELL_SIZE
+
+                        if (new_x, new_y) in valid_cells:
                             selected_unit.move(new_x, new_y)
                             has_acted = True
+                            selected_unit.is_selected = False
 
-                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_s:  # Skip turn
-                        has_acted = True
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_s:  # Skip turn pour la touche s 
+                            has_acted = True
+                            selected_unit.is_selected = False
+
+                self.draw_highlighted_cells(valid_cells)
 
     def handle_enemy_turn(self):
-        """Handles the enemy player's turn by moving enemy units toward the nearest player unit."""
-        for enemy_unit in self.enemy_units:
+        """Simple AI for the enemy's turn."""
+        for enemy in self.enemy_units:
             if self.check_game_over():
                 return
 
-            # Find the nearest player unit
-            nearest_player = None
-            min_distance = float('inf')
+            target = random.choice(self.player_units)
+            dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
+            dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
+            new_x = enemy.x + dx
+            new_y = enemy.y + dy
 
-            for player_unit in self.player_units:
-                distance = abs(enemy_unit.x - player_unit.x) + abs(enemy_unit.y - player_unit.y)
-                if distance < min_distance:
-                    min_distance = distance
-                    nearest_player = player_unit
+            if abs(new_x - enemy.x) + abs(new_y - enemy.y) <= enemy.speed and self.tile_map.is_walkable(new_x, new_y):
+                enemy.move(new_x, new_y)
 
-            if nearest_player:
-                # Determine movement direction toward the nearest player
-                dx = 1 if enemy_unit.x < nearest_player.x else -1 if enemy_unit.x > nearest_player.x else 0
-                dy = 1 if enemy_unit.y < nearest_player.y else -1 if enemy_unit.y > nearest_player.y else 0
-                new_x, new_y = enemy_unit.x + dx, enemy_unit.y + dy
+            if abs(enemy.x - target.x) <= enemy.range and abs(enemy.y - target.y) <= enemy.range:
+                enemy.attack(target)
+                self.display_log(f"{enemy.__class__.__name__} attacked {target.__class__.__name__}!")
+                if target.health <= 0:
+                    self.player_units.remove(target)
+                    self.display_log(f"{target.__class__.__name__} was defeated!")
 
-                # Ensure the move is valid (within grid bounds and unit speed)
-                if abs(dx) + abs(dy) <= enemy_unit.speed and 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE:
-                    enemy_unit.move(new_x, new_y)
-
-                # Redraw the game after the enemy moves
-                self.draw_static_elements([])
-                for unit in self.player_units + self.enemy_units:
-                    unit.draw(self.screen)
-                pygame.display.flip()
-
-
-
+   
 
     def check_game_over(self):
-        """Check if the game is over."""
+        """Checks if the game is over and displays the winner."""
         if not self.player_units:
             self.display_game_over("Enemy Wins!")
             return True
@@ -185,31 +178,42 @@ class Game:
         return False
 
     def display_game_over(self, message):
-        """Display the game over message."""
+        """Displays a game over message and stops the game."""
         font = pygame.font.Font(None, 72)
-        game_over_surface = font.render(message, True, RED)
-        game_over_rect = game_over_surface.get_rect(center=(MAP_WIDTH// 2, TOTAL_HEIGHT // 2))
+        game_over_surface = font.render(message, True, (255, 0, 0))  # Assuming RED is defined
+        game_over_rect = game_over_surface.get_rect(center=(GC.WIDTH // 2, GC.HEIGHT // 2))
         self.screen.blit(game_over_surface, game_over_rect)
         pygame.display.flip()
-        pygame.time.wait(3000)
+        pygame.time.wait(3000)  # Pause for 3 seconds
         pygame.quit()
         exit()
 
-
 def main():
     pygame.init()
-    screen = pygame.display.set_mode((TOTAL_WIDTH, TOTAL_HEIGHT))  # Added space for logs
-    pygame.display.set_caption("Strategic Game")
-    game = Game(screen)
+    clock = pygame.time.Clock()
+    WEIGHTS = [35, 40, 10, 40, 10, 10]
+    random_seed = random.randint(0, 1000)
 
-    while True:
+    world = World(GC.WORLD_X, GC.WORLD_Y, random_seed)
+    tile_map = world.get_tiled_map(WEIGHTS)
+
+    screen = pygame.display.set_mode((GC.WIDTH, GC.HEIGHT), pygame.SRCALPHA)  # Added space for the game log
+    pygame.display.set_caption("Strategic Game")
+
+    game = Game(screen, tile_map)
+
+    running = True
+    while running:
         game.handle_player_turn()
         if game.check_game_over():
             break
         game.handle_enemy_turn()
         if game.check_game_over():
             break
+        pygame.display.flip()
+        clock.tick(60)
 
+    pygame.quit()
 
 if __name__ == "__main__":
     main()
