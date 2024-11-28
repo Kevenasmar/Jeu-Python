@@ -34,7 +34,9 @@ class Game:
         ]
 
         self.tile_map = Map_Aleatoire(tile_map, TERRAIN_TILES, GC.CELL_SIZE)
-
+    #Call spawn_units after initializing player_units
+        self.spawn_units()
+    
     def display_log(self, message):
         """Displays a game log at the bottom of the screen."""
         font = pygame.font.Font(None, 36)
@@ -61,7 +63,46 @@ class Game:
                         valid_cells.append((x, y))
 
         return valid_cells
+ 
+    #------------------Make Sure that the units doesn't spawn on non walkable tiles----------------#
+    def get_valid_spawn_locations(self, tile_map, enemy_units, min_distance):
+        """Get valid spawn locations that are walkable and far from enemies."""
+        valid_spawn_locations = []
+        all_enemy_positions = {(enemy.x, enemy.y) for enemy in enemy_units}
 
+        for x in range(GC.WORLD_X):
+            for y in range(GC.WORLD_Y):
+                if tile_map.is_walkable(x, y):  # Check if the tile is walkable
+                    # Check distance from all enemy units
+                    if all(abs(x - enemy.x) + abs(y - enemy.y) >= min_distance for enemy in enemy_units):
+                        valid_spawn_locations.append((x, y))
+
+        return valid_spawn_locations
+
+    def spawn_units(self):
+        min_distance_from_enemy = 8  # Set your desired minimum distance
+        valid_spawn_locations = self.get_valid_spawn_locations(self.tile_map, self.enemy_units, min_distance_from_enemy)
+
+        if valid_spawn_locations:
+            # Randomly select a spawn location for the first unit
+            spawn_location = random.choice(valid_spawn_locations)
+            start_x, start_y = spawn_location
+
+            # List of offsets to spawn units next to each other
+            offsets = [(0, 0), (1, 0), (0, 1), (1, 1)]  # Adjust this as needed for more formations
+
+            for unit in self.player_units:
+                while True:
+                    # Randomly select an offset
+                    offset = random.choice(offsets)
+                    new_x, new_y = start_x + offset[0], start_y + offset[1]
+
+                    # Check if the new position is valid
+                    if (0 <= new_x < GC.WORLD_X and 0 <= new_y < GC.WORLD_Y and
+                        self.tile_map.is_walkable(new_x, new_y) and (new_x, new_y) not in {(u.x, u.y) for u in self.player_units}):
+                        unit.x, unit.y = new_x, new_y
+                        break
+    #-----------------End of the making sure of -----------#
 
     def redraw_static_elements(self):
         """Redraw the grid and units."""
