@@ -36,7 +36,7 @@ class Game:
         self.tile_map = Map_Aleatoire(tile_map, TERRAIN_TILES, GC.CELL_SIZE)
     #Call spawn_units after initializing player_units
         self.spawn_units()
-    
+        self.logs = [] 
     def display_log(self, message):
         """Displays a game log at the bottom of the screen."""
         font = pygame.font.Font(None, 36)
@@ -102,6 +102,51 @@ class Game:
                         self.tile_map.is_walkable(new_x, new_y) and (new_x, new_y) not in {(u.x, u.y) for u in self.player_units}):
                         unit.x, unit.y = new_x, new_y
                         break
+    #---------------------END OF THIS PART-----------------------------------------------#
+    
+    #----------------------Creating The game Log-----------------------------------------#
+    def display_log(self, message, position=(10, GC.HEIGHT - GC.LOG_HEIGHT + 10)):
+        """Displays a single log message at the bottom of the screen."""
+        font = pygame.font.Font(None, 24)
+        log_surface = font.render(message, True, (255, 255, 255))  # White text
+        self.screen.blit(log_surface, position)  # Position the log
+        # Draw action options
+        font = pygame.font.Font(None, 36)
+        actions = ["Attack", "Defend", "Skip"]
+        for i, action in enumerate(actions):
+            text_surface = font.render(action, True, (255, 255, 255))  # White text
+            self.screen.blit(text_surface, (100 + i * 150, GC.HEIGHT - GC.LOG_HEIGHT + 25))  # Position the action options
+    
+    def handle_action_selection():
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_a:  # Attack
+                        return "attack"
+                    elif event.key == pygame.K_d:  # Defend
+                        return "defend"
+                    elif event.key == pygame.K_s:  # Skip
+                        return "skip"
+    
+    def add_log(self, message):
+        """Add a log message and ensure only the last 5 messages are kept."""
+        self.logs.append(message)
+    
+    def draw_game_log(self):
+        """Draws the log area and renders the latest log messages."""
+        pygame.draw.rect(self.screen, (0, 0, 0), (0, GC.HEIGHT - GC.LOG_HEIGHT, GC.WIDTH, GC.LOG_HEIGHT))  # Black background
+
+        font = pygame.font.Font(None, 24)
+        for i, message in enumerate(self.logs):
+            text_surface = font.render(message, True, (255, 255, 255))  # White text
+            self.screen.blit(text_surface, (10, GC.HEIGHT - GC.LOG_HEIGHT + 10 + i * 20))  # Position messages
+    
+
+    
+    #-----------------END OF THIS PART---------------------------------------------------#
     
     def redraw_static_elements(self):
         """Redraw the grid and units."""
@@ -189,6 +234,10 @@ class Game:
                         if event.key == pygame.K_s:  # Skip turn pour la touche s 
                             has_acted = True
                             selected_unit.is_selected = False
+                        if (new_x, new_y) in valid_cells:
+                            selected_unit.move(new_x, new_y)
+                            self.add_log(f"{selected_unit.__class__.__name__} moved to ({new_x}, {new_y}).")
+                            has_acted = True
 
                 self.draw_highlighted_cells(valid_cells)
 
@@ -214,7 +263,13 @@ class Game:
                     self.player_units.remove(target)
                     self.display_log(f"{target.__class__.__name__} was defeated!")
 
-   
+            if abs(enemy.x - target.x) <= enemy.range and abs(enemy.y - target.y) <= enemy.range:
+                enemy.attack(target)
+                self.add_log(f"{enemy.__class__.__name__} attacked {target.__class__.__name__}!")
+                if target.health <= 0:
+                    self.player_units.remove(target)
+                    self.add_log(f"{target.__class__.__name__} was defeated!")
+            
 
     def check_game_over(self):
         """Checks if the game is over and displays the winner."""
@@ -241,25 +296,28 @@ def main():
     pygame.init()
     clock = pygame.time.Clock()
     WEIGHTS = [25, 40, 10, 40, 10, 10]
-    random_seed = random.randint(0, 1000)
+    random_seed = 8
 
     world = World(GC.WORLD_X, GC.WORLD_Y, random_seed)
     tile_map = world.get_tiled_map(WEIGHTS)
 
     screen = pygame.display.set_mode((GC.WIDTH, GC.HEIGHT), pygame.SRCALPHA)  # Added space for the game log
-    pygame.display.set_caption("Strategic Game")
+    pygame.display.set_caption("Game")
 
     game = Game(screen, tile_map)
-
+    # Example selected unit
+    selected_unit = Archer(0, 0, 100, 5, 2, 2, 3, 'Photos/archer.jpg', 'player')  # Replace with your actual unit
     running = True
     while running:
+        game.redraw_static_elements()  # Draw grid, units, and static elements
+        game.draw_game_log()  # Draw the log messages
         game.handle_player_turn()
+    
         if game.check_game_over():
             break
         game.handle_enemy_turn()
         if game.check_game_over():
             break
-        pygame.display.flip()
         clock.tick(60)
 
     pygame.quit()

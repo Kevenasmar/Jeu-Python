@@ -50,7 +50,7 @@ class Unit:
         self.defense = defense
         self.speed = speed
         self.vision = vision
-        self.image = pygame.image.load(image_path)  # Chargement de l'image
+        self.image = pygame.image.load(image_path).convert_alpha()  # Chargement de l'image
         self.image = pygame.transform.scale(self.image, (int(0.75 * GC.CELL_SIZE), int(0.75 * GC.CELL_SIZE)))  # Échelle de l'image
         self.team = team  # 'player' ou 'enemy'
         self.is_selected = False

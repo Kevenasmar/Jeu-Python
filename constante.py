@@ -3,7 +3,7 @@
 class GameConstantes : 
     GRID_SIZE = 16
     CELL_SIZE = 45
-    
+    LOG_HEIGHT = 10
     WIDTH = GRID_SIZE * CELL_SIZE
     HEIGHT = GRID_SIZE * CELL_SIZE
     FPS = 30
