@@ -36,14 +36,7 @@ class Game:
         self.tile_map = Map_Aleatoire(tile_map, TERRAIN_TILES, GC.CELL_SIZE)
     #Call spawn_units after initializing player_units
         self.spawn_units()
-        self.logs = [] 
-    def display_log(self, message):
-        """Displays a game log at the bottom of the screen."""
-        font = pygame.font.Font(None, 36)
-        log_surface = font.render(message, True, (255, 255, 255))  # Assuming WHITE is defined
-        log_rect = log_surface.get_rect(center=(GC.WIDTH // 2, GC.HEIGHT + 20))
-        self.screen.blit(log_surface, log_rect)
-        pygame.display.flip()
+        #self.logs = [] 
 
     def calculate_valid_cells(self, unit):
         """Calculate accessible cells for a unit, excluding cells occupied by other units within its speed range."""
@@ -103,10 +96,10 @@ class Game:
                         unit.x, unit.y = new_x, new_y
                         break
     #---------------------END OF THIS PART-----------------------------------------------#
-    
+    """"
     #----------------------Creating The game Log-----------------------------------------#
     def display_log(self, message, position=(10, GC.HEIGHT - GC.LOG_HEIGHT + 10)):
-        """Displays a single log message at the bottom of the screen."""
+        #Displays a single log message at the bottom of the screen.
         font = pygame.font.Font(None, 24)
         log_surface = font.render(message, True, (255, 255, 255))  # White text
         self.screen.blit(log_surface, position)  # Position the log
@@ -132,11 +125,11 @@ class Game:
                         return "skip"
     
     def add_log(self, message):
-        """Add a log message and ensure only the last 5 messages are kept."""
+        #Add a log message and ensure only the last 5 messages are kept.
         self.logs.append(message)
     
     def draw_game_log(self):
-        """Draws the log area and renders the latest log messages."""
+        #Draws the log area and renders the latest log messages
         pygame.draw.rect(self.screen, (0, 0, 0), (0, GC.HEIGHT - GC.LOG_HEIGHT, GC.WIDTH, GC.LOG_HEIGHT))  # Black background
 
         font = pygame.font.Font(None, 24)
@@ -147,7 +140,7 @@ class Game:
 
     
     #-----------------END OF THIS PART---------------------------------------------------#
-    
+    """
     def redraw_static_elements(self):
         """Redraw the grid and units."""
         self.screen.fill(GC.GREEN)  # Fill the screen with GREEN
@@ -234,10 +227,10 @@ class Game:
                         if event.key == pygame.K_s:  # Skip turn pour la touche s 
                             has_acted = True
                             selected_unit.is_selected = False
-                        if (new_x, new_y) in valid_cells:
+                        """if (new_x, new_y) in valid_cells:
                             selected_unit.move(new_x, new_y)
                             self.add_log(f"{selected_unit.__class__.__name__} moved to ({new_x}, {new_y}).")
-                            has_acted = True
+                            has_acted = True"""
 
                 self.draw_highlighted_cells(valid_cells)
 
@@ -308,7 +301,7 @@ def main():
     running = True
     while running:
         game.redraw_static_elements()  # Draw grid, units, and static elements
-        game.draw_game_log()  # Draw the log messages
+        """ game.draw_game_log() """ # Draw the log messages
         game.handle_player_turn()
     
         if game.check_game_over():
