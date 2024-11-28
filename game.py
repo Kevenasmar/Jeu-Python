@@ -305,8 +305,6 @@ def main():
     pygame.display.set_caption("Game")
 
     game = Game(screen, tile_map)
-    # Example selected unit
-    selected_unit = Archer(0, 0, 100, 5, 2, 2, 3, 'Photos/archer.jpg', 'player')  # Replace with your actual unit
     running = True
     while running:
         game.redraw_static_elements()  # Draw grid, units, and static elements
