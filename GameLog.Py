@@ -4,10 +4,12 @@ import pygame
 pygame.init()
 from constante import GameConstantes as GC # type: ignore
 class GameLog : 
-    def __init__ (self, width, height) : 
+    def __init__ (self, width, height, pos_x, pos_y) : 
         self.width = width
         self.height = height
-        self.surface = pygame.display.set_mode((GC.WIDTH, GC.HEIGHT))
+        self.surface = pygame.display.set_mode((width,height))
+        self.pos_x = pos_x
+        self.pos_y = pos_y
         self.couleur_fond = (245, 222, 179)
         self.font = pygame.font.Font("font/Modern.ttf", 16)
         pygame.draw.rect(self.surface, self.couleur_fond, pygame.Rect(GC.WIDTH - width, 0, width, GC.HEIGHT))
