@@ -1,12 +1,12 @@
 #constantes 
 #defini dans ce fichier toutes les constantes que tu utilise dans le code
 class GameConstantes : 
-    GRID_SIZE = 16
-    CELL_SIZE = 45
+    GRID_SIZE = 14
+    CELL_SIZE = 30
     LOG_HEIGHT = 10
     WIDTH = GRID_SIZE * CELL_SIZE
     HEIGHT = GRID_SIZE * CELL_SIZE
-    FPS = 30
+    FPS = 120
     WHITE = (255, 255, 255)
     BLACK = (0, 0, 0)
     RED = (255, 0, 0)
