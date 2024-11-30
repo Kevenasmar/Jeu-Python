@@ -7,7 +7,7 @@ from constante import GameConstantes as GC
 from configureWorld import*
 from World_Drawer import *
 from world import*
-
+from GameLog import * # type: ignore
 # Setup tiles
 tiles_kind = [
     SandTile(),  # False veut dire que la case n'est pas solide tu peux marcher
@@ -20,6 +20,7 @@ map = Map("map/start.map", tiles_kind, GC.CELL_SIZE)
 class Game:
     def __init__(self, screen, tile_map):
         self.screen = screen
+        self.game_log = GameLog(100, GC.HEIGHT, GC.WIDTH, 0, self.screen)
         self.player_units = [
            #(x, y, health, attack, defense, speed, vision, image_path, team)
             Archer(0, 0, 100, 5, 2, 2, 3, 'Photos/archer.jpg', 'player'),
@@ -36,14 +37,7 @@ class Game:
         self.tile_map = Map_Aleatoire(tile_map, TERRAIN_TILES, GC.CELL_SIZE)
     #Call spawn_units after initializing player_units
         self.spawn_units()
-    
-    def display_log(self, message):
-        """Displays a game log at the bottom of the screen."""
-        font = pygame.font.Font(None, 36)
-        log_surface = font.render(message, True, (255, 255, 255))  # Assuming WHITE is defined
-        log_rect = log_surface.get_rect(center=(GC.WIDTH // 2, GC.HEIGHT + 20))
-        self.screen.blit(log_surface, log_rect)
-        pygame.display.flip()
+        
 
     def calculate_valid_cells(self, unit):
         """Calculate accessible cells for a unit, excluding cells occupied by other units within its speed range."""
@@ -76,7 +70,7 @@ class Game:
                     # Check distance from all enemy units
                     if all(abs(x - enemy.x) + abs(y - enemy.y) >= min_distance for enemy in enemy_units):
                         valid_spawn_locations.append((x, y))
-
+                        
         return valid_spawn_locations
 
     def spawn_units(self):
@@ -101,29 +95,31 @@ class Game:
                     if (0 <= new_x < GC.WORLD_X and 0 <= new_y < GC.WORLD_Y and
                         self.tile_map.is_walkable(new_x, new_y) and (new_x, new_y) not in {(u.x, u.y) for u in self.player_units}):
                         unit.x, unit.y = new_x, new_y
+                        self.game_log.add_message('units spawned', 'other')
                         break
+        self.game_log.draw()
     #-----------------End of the making sure of -----------#
 
     def redraw_static_elements(self):
         """Redraw the grid and units."""
-        self.screen.fill(GC.GREEN)  # Fill the screen with GREEN
+        self.screen.fill(GC.WHITE)  # Fill the screen with GREEN
         self.tile_map.draw(self.screen)
         # Draw the grid
         for x in range(0, GC.WIDTH, GC.CELL_SIZE):
             for y in range(0, GC.HEIGHT, GC.CELL_SIZE):
                 rect = pygame.Rect(x, y, GC.CELL_SIZE, GC.CELL_SIZE)
                 pygame.draw.rect(self.screen, (255, 255, 255), rect, 1)
-
+        self.game_log.draw()
         pygame.display.flip()  # Update once
     
     def flip_display(self):
         """Renders the game state."""
-        self.screen.fill(GC.GREEN) # Fill the screen with black
+        self.screen.fill(GC.WHITE) # Fill the screen with black
         self.tile_map.draw(self.screen)  # Draw the map
 
         for unit in self.player_units + self.enemy_units:
             unit.draw(self.screen)  # Draw units
-
+        self.game_log.draw()
         pygame.display.flip()  # Update the display
 
     def draw_highlighted_cells(self, valid_cells):
@@ -156,6 +152,7 @@ class Game:
             unit.draw(self.screen)
 
         # Update display
+        self.game_log.draw()
         pygame.display.update()
 
 
@@ -185,13 +182,17 @@ class Game:
                             selected_unit.move(new_x, new_y)
                             has_acted = True
                             selected_unit.is_selected = False
+                            self.game_log.add_message('Player mouved', 'mouvement')
+                            self.game_log.draw()
 
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_s:  # Skip turn pour la touche s 
                             has_acted = True
                             selected_unit.is_selected = False
-
+                            self.game_log.add_message('You skipped your turn.', 'other')
+                            self.game_log.draw()
                 self.draw_highlighted_cells(valid_cells)
+        
 
     def handle_enemy_turn(self):
         """Simple AI for the enemy's turn."""
@@ -207,23 +208,24 @@ class Game:
 
             if abs(new_x - enemy.x) + abs(new_y - enemy.y) <= enemy.speed and self.tile_map.is_walkable(new_x, new_y):
                 enemy.move(new_x, new_y)
+                self.game_log.add_message('Enemy moved', 'mouvement')
 
             if abs(enemy.x - target.x) <= enemy.range and abs(enemy.y - target.y) <= enemy.range:
                 enemy.attack(target)
-                self.display_log(f"{enemy.__class__.__name__} attacked {target.__class__.__name__}!")
+                self.game_log.add_message(f"{enemy.__class__.__name__} attacked {target.__class__.__name__}!", 'attack')
                 if target.health <= 0:
                     self.player_units.remove(target)
-                    self.display_log(f"{target.__class__.__name__} was defeated!")
-
+                    self.game_log.add_message(f"{target.__class__.__name__} was defeated!", 'lose')
+        self.game_log.draw()
    
 
     def check_game_over(self):
         """Checks if the game is over and displays the winner."""
         if not self.player_units:
-            self.display_game_over("Enemy Wins!")
+            self.game_log.add_message('Enemy wins', 'lose')
             return True
         elif not self.enemy_units:
-            self.display_game_over("Player Wins!")
+            self.game_log.add_message('Player wins', 'win')
             return True
         return False
 
@@ -247,20 +249,24 @@ def main():
     world = World(GC.WORLD_X, GC.WORLD_Y, random_seed)
     tile_map = world.get_tiled_map(WEIGHTS)
 
-    screen = pygame.display.set_mode((GC.WIDTH, GC.HEIGHT), pygame.SRCALPHA)  # Added space for the game log
+    screen = pygame.display.set_mode((GC.WIDTH+100, GC.HEIGHT), pygame.SRCALPHA)  # Added space for the game log
     pygame.display.set_caption("Strategic Game")
 
     game = Game(screen, tile_map)
 
     running = True
     while running:
-        game.handle_player_turn()
+        game.redraw_static_elements()  # Efface et redessine la carte initialement
+
+        game.handle_player_turn()      # Tour du joueur
         if game.check_game_over():
             break
-        game.handle_enemy_turn()
+
+        game.handle_enemy_turn()       # Tour de l'ennemi
         if game.check_game_over():
             break
-        pygame.display.flip()
+
+        pygame.display.flip()          # Un seul flip après tout
         clock.tick(60)
 
     pygame.quit()

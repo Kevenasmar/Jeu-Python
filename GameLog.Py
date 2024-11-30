@@ -1,22 +1,20 @@
-import datetime
+from datetime import datetime
 from posixpath import split
 import pygame 
 pygame.init()
 from constante import GameConstantes as GC # type: ignore
 class GameLog : 
-    def __init__ (self, width, height, pos_x, pos_y) : 
+    def __init__ (self, width, height, pos_x, pos_y, screen) : 
         self.width = width
         self.height = height
-        self.surface = pygame.display.set_mode((width,height))
         self.pos_x = pos_x
+        self.screen = screen
         self.pos_y = pos_y
         self.couleur_fond = (245, 222, 179)
-        self.font = pygame.font.Font("font/Modern.ttf", 16)
-        pygame.draw.rect(self.surface, self.couleur_fond, pygame.Rect(GC.WIDTH - width, 0, width, GC.HEIGHT))
-        pygame.display.flip()
-        add_log = []
+        self.font = pygame.font.Font("font/Modern.ttf", 10)
         self.messages = []
         self.limite = 5
+        self.surface = pygame.Surface((self.width, self.height))
     
     def add_message(self,message,type) :
         if len(self.messages) >= self.limite : 
@@ -25,8 +23,16 @@ class GameLog :
             couleur_text = (138,0,0)
         elif type == "attack" : 
             couleur_text = (192, 111, 90)
-        else : 
-            couleur_text = (225, 153, 116)
+        elif type == "dead" : 
+            couleur_text = (42, 13, 6)
+        elif type == "win" :
+            couleur_text = (42, 13, 254)
+        elif type == "lose" :
+            couleur_text = (255, 13, 0)
+        elif type == "game_over" :
+            couleur_text = (248, 51, 84)
+        elif type == "other": 
+            couleur_text = (0, 0, 0)
         
 
         timestamp = datetime.now().strftime("%H:%M:%S")
@@ -56,11 +62,11 @@ class GameLog :
         return "\n".join(lines)
     
     def draw(self):
-        # Fill the background
-        self.surface.fill(self.couleur_fond)
+        # Dessiner le fond
+        pygame.draw.rect(self.screen, self.couleur_fond, (self.pos_x, self.pos_y, self.width, self.height))
         
-        # Draw the messages
-        for i, message in enumerate(self.messages):
-            self.surface.blit(message, (10, 10 + i * 20))  # Adjust the position as needed
-        
-        pygame.display.flip()
+        # Dessiner les messages
+        y_offset = 10
+        for message in self.messages:
+            self.screen.blit(message, (self.pos_x + 10, self.pos_y + y_offset))
+            y_offset += 25
