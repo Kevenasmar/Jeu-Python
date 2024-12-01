@@ -36,7 +36,7 @@ class Game:
 
         self.tile_map = Map_Aleatoire(tile_map, TERRAIN_TILES, GC.CELL_SIZE)
     #Call spawn_units after initializing player_units
-        self.spawn_units()
+        #self.spawn_units()
         
 
     def calculate_valid_cells(self, unit):
@@ -57,10 +57,10 @@ class Game:
                         valid_cells.append((x, y))
 
         return valid_cells
- 
-    #------------------Make Sure that the units doesn't spawn on non walkable tiles----------------#
+    """
+    #------------------Make Sure that the units doesn't spawn on non walkable tiles/ It's better now to leave it as a comment----------------#
     def get_valid_spawn_locations(self, tile_map, enemy_units, min_distance):
-        """Get valid spawn locations that are walkable and far from enemies."""
+        #Get valid spawn locations that are walkable and far from enemies
         valid_spawn_locations = []
         all_enemy_positions = {(enemy.x, enemy.y) for enemy in enemy_units}
 
@@ -98,8 +98,8 @@ class Game:
                         self.game_log.add_message('units spawned', 'other')
                         break
         self.game_log.draw()
-    #-----------------End of the making sure of -----------#
-
+    #-----------------End of the making sure of , leave it as a  comment-----------#
+    """
     def redraw_static_elements(self):
         """Redraw the grid and units."""
         self.screen.fill(GC.WHITE)  # Fill the screen with GREEN
