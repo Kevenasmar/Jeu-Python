@@ -36,7 +36,7 @@ class Game:
 
         self.tile_map = Map_Aleatoire(tile_map, TERRAIN_TILES, GC.CELL_SIZE)
     #Call spawn_units after initializing player_units
-        #self.spawn_units()
+        self.spawn_units()
         
 
     def calculate_valid_cells(self, unit):
@@ -100,6 +100,44 @@ class Game:
         self.game_log.draw()
     #-----------------End of the making sure of , leave it as a  comment-----------#
     """
+
+    ##################--------Making sure that the units doesn't spawn on non walkable tiles------------######## 
+    def initisialize_walkable_tiles(self) :
+        set_walkable_tiles = set () 
+        for x in range (GC.WORLD_X):
+            for y in range (GC.WORLD_Y):
+                if self.tile_map.is_walkable (x , y):
+                    set_walkable_tiles.add((x,y))
+                    return set_walkable_tiles
+    
+    def get_spawn_sector(self) :
+        sector_width = GC.WIDTH // 3 
+        sector_height = GC.HEIGHT // 3
+        player_sector_x = 0 #joueur spawn a la partie gauche de la map 
+        sector_y = random.randint(0,2) #joueur spawn aleatoirement dans les 3 secteur gauche de la map
+        return (player_sector_x*sector_width, sector_y*sector_height, sector_width, sector_height) 
+        
+    def find_spawn_location (self, nbr_units) :
+        spawn_sector = self.get_spawn_sector()        
+        spawn_locations = []
+        for x in range(spawn_sector[2]) : 
+            for y in range(spawn_sector[3]): 
+                if (x,y) in self.initisialize_walkable_tiles() : 
+                    spawn_locations.append((x,y))
+                if len(spawn_locations) == nbr_units :
+                    return spawn_locations
+        return spawn_locations
+    
+    def spawn_units(self) : 
+        spawn_location = self.find_spawn_location (len(self.player_units))
+
+        for unit , location in zip (self.player_units, spawn_location) :
+            unit.x, unit.y = location 
+            self.game_log.add_message(f'{unit.__class__.__name__} spawned', 'other')
+    
+        self.game_log.draw()
+
+    #################-----------------END OF THIS PART ---------------------------########
     def redraw_static_elements(self):
         """Redraw the grid and units."""
         self.screen.fill(GC.WHITE)  # Fill the screen with GREEN
