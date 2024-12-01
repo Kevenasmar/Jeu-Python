@@ -20,7 +20,7 @@ map = Map("map/start.map", tiles_kind, GC.CELL_SIZE)
 class Game:
     def __init__(self, screen, tile_map):
         self.screen = screen
-        self.game_log = GameLog(100, GC.HEIGHT, GC.WIDTH, 0, self.screen)
+        self.game_log = GameLog(300, GC.HEIGHT, GC.WIDTH, 0, self.screen)
         self.player_units = [
            #(x, y, health, attack, defense, speed, vision, image_path, team)
             Archer(0, 0, 100, 5, 2, 2, 3, 'Photos/archer.jpg', 'player'),
@@ -35,9 +35,10 @@ class Game:
         ]
 
         self.tile_map = Map_Aleatoire(tile_map, TERRAIN_TILES, GC.CELL_SIZE)
-    #Call spawn_units after initializing player_units
+        self.walkable_tiles = self.initisialize_walkable_tiles()
+        #Call spawn_units after initializing player_units
         self.spawn_units()
-        
+
 
     def calculate_valid_cells(self, unit):
         """Calculate accessible cells for a unit, excluding cells occupied by other units within its speed range."""
@@ -57,75 +58,32 @@ class Game:
                         valid_cells.append((x, y))
 
         return valid_cells
-    """
-    #------------------Make Sure that the units doesn't spawn on non walkable tiles/ It's better now to leave it as a comment----------------#
-    def get_valid_spawn_locations(self, tile_map, enemy_units, min_distance):
-        #Get valid spawn locations that are walkable and far from enemies
-        valid_spawn_locations = []
-        all_enemy_positions = {(enemy.x, enemy.y) for enemy in enemy_units}
-
-        for x in range(GC.WORLD_X):
-            for y in range(GC.WORLD_Y):
-                if tile_map.is_walkable(x, y):  # Check if the tile is walkable
-                    # Check distance from all enemy units
-                    if all(abs(x - enemy.x) + abs(y - enemy.y) >= min_distance for enemy in enemy_units):
-                        valid_spawn_locations.append((x, y))
-                        
-        return valid_spawn_locations
-
-    def spawn_units(self):
-        min_distance_from_enemy = 8  # Set your desired minimum distance
-        valid_spawn_locations = self.get_valid_spawn_locations(self.tile_map, self.enemy_units, min_distance_from_enemy)
-
-        if valid_spawn_locations:
-            # Randomly select a spawn location for the first unit
-            spawn_location = random.choice(valid_spawn_locations)
-            start_x, start_y = spawn_location
-
-            # List of offsets to spawn units next to each other
-            offsets = [(0, 0), (1, 0), (0, 1), (1, 1)]  # Adjust this as needed for more formations
-
-            for unit in self.player_units:
-                while True:
-                    # Randomly select an offset
-                    offset = random.choice(offsets)
-                    new_x, new_y = start_x + offset[0], start_y + offset[1]
-
-                    # Check if the new position is valid
-                    if (0 <= new_x < GC.WORLD_X and 0 <= new_y < GC.WORLD_Y and
-                        self.tile_map.is_walkable(new_x, new_y) and (new_x, new_y) not in {(u.x, u.y) for u in self.player_units}):
-                        unit.x, unit.y = new_x, new_y
-                        self.game_log.add_message('units spawned', 'other')
-                        break
-        self.game_log.draw()
-    #-----------------End of the making sure of , leave it as a  comment-----------#
-    """
 
     ##################--------Making sure that the units doesn't spawn on non walkable tiles------------######## 
     def initisialize_walkable_tiles(self) :
         set_walkable_tiles = set () 
         for x in range (GC.WORLD_X):
             for y in range (GC.WORLD_Y):
-                if self.tile_map.is_walkable (x , y):
-                    set_walkable_tiles.add((x,y))
-                    return set_walkable_tiles
+                if any(self.tile_map.is_walkable(x, y, unit) for unit in self.player_units):
+                    set_walkable_tiles.add((x, y))
+        return set_walkable_tiles
     
     def get_spawn_sector(self) :
-        sector_width = GC.WIDTH // 3 
-        sector_height = GC.HEIGHT // 3
+        sector_width = GC.WORLD_X // 3 
+        sector_height = GC.WORLD_Y // 3
         player_sector_x = 0 #joueur spawn a la partie gauche de la map 
         sector_y = random.randint(0,2) #joueur spawn aleatoirement dans les 3 secteur gauche de la map
         return (player_sector_x*sector_width, sector_y*sector_height, sector_width, sector_height) 
         
     def find_spawn_location (self, nbr_units) :
-        spawn_sector = self.get_spawn_sector()        
+        sector_x, sector_y, width, height = self.get_spawn_sector()        
         spawn_locations = []
-        for x in range(spawn_sector[2]) : 
-            for y in range(spawn_sector[3]): 
-                if (x,y) in self.initisialize_walkable_tiles() : 
-                    spawn_locations.append((x,y))
-                if len(spawn_locations) == nbr_units :
-                    return spawn_locations
+        for x in range(sector_x, sector_x + width):
+            for y in range(sector_y, sector_y + height):
+                if all(self.tile_map.is_walkable(x, y, unit) for unit in self.player_units):
+                    spawn_locations.append((x, y))  
+                    if len(spawn_locations) == nbr_units :
+                        return spawn_locations
         return spawn_locations
     
     def spawn_units(self) : 
@@ -281,13 +239,14 @@ class Game:
 def main():
     pygame.init()
     clock = pygame.time.Clock()
-    WEIGHTS = [25, 40, 10, 40, 10, 10]
+    WEIGHTS = [20, 40, 10, 40, 10, 10]
     random_seed = random.randint(0, 1000)
 
     world = World(GC.WORLD_X, GC.WORLD_Y, random_seed)
     tile_map = world.get_tiled_map(WEIGHTS)
 
-    screen = pygame.display.set_mode((GC.WIDTH+100, GC.HEIGHT), pygame.SRCALPHA)  # Added space for the game log
+    screen = pygame.display.set_mode((GC.WIDTH+300, GC.HEIGHT), pygame.SRCALPHA)  # Added space for the game log
+
     pygame.display.set_caption("Strategic Game")
 
     game = Game(screen, tile_map)
