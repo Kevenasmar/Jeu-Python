@@ -25,7 +25,7 @@ class TileKind(ABC):
         """
         self.nom = nom
         self.image_path = image_path
-        Loaded_image = pygame.image.load(image_path)
+        Loaded_image = pygame.image.load(image_path).convert_alpha()
         self.image = pygame.transform.scale(Loaded_image, (GC.CELL_SIZE, GC.CELL_SIZE))
         self.is_solide = is_solide
 
