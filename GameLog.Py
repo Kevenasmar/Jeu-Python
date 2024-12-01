@@ -11,7 +11,7 @@ class GameLog :
         self.screen = screen
         self.pos_y = pos_y
         self.couleur_fond = (245, 222, 179)
-        self.font = pygame.font.Font("font/Modern.ttf", 10)
+        self.font = pygame.font.Font("font/Modern.ttf", 15)
         self.messages = []
         self.limite = 5
         self.surface = pygame.Surface((self.width, self.height))

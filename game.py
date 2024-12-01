@@ -20,12 +20,12 @@ map = Map("map/start.map", tiles_kind, GC.CELL_SIZE)
 class Game:
     def __init__(self, screen, tile_map):
         self.screen = screen
-        self.game_log = GameLog(100, GC.HEIGHT, GC.WIDTH, 0, self.screen)
+        self.game_log = GameLog(200, GC.HEIGHT, GC.WIDTH, 0, self.screen)
         self.player_units = [
            #(x, y, health, attack, defense, speed, vision, image_path, team)
-            Archer(0, 0, 100, 5, 2, 2, 3, 'Photos/archer.jpg', 'player'),
-            Mage(1, 0, 100, 3, 1, 1, 2, 'Photos/mage.jpg', 'player'),
-            Giant(2, 0, 100, 10, 1, 1, 2, 'Photos/giant.jpg', 'player')
+            Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/archer.jpg', 'player'),
+            Mage(1, 0, 100, 3, 1, 4, 2, 'Photos/mage.jpg', 'player'),
+            Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/giant.jpg', 'player')
         ]
 
         self.enemy_units = [
@@ -102,13 +102,12 @@ class Game:
 
     def redraw_static_elements(self):
         """Redraw the grid and units."""
-        self.screen.fill(GC.WHITE)  # Fill the screen with GREEN
+        self.screen.fill(GC.GREEN)  # Fill the screen with GREEN
         self.tile_map.draw(self.screen)
         # Draw the grid
         for x in range(0, GC.WIDTH, GC.CELL_SIZE):
             for y in range(0, GC.HEIGHT, GC.CELL_SIZE):
                 rect = pygame.Rect(x, y, GC.CELL_SIZE, GC.CELL_SIZE)
-                pygame.draw.rect(self.screen, (255, 255, 255), rect, 1)
         self.game_log.draw()
         pygame.display.flip()  # Update once
     
@@ -182,7 +181,7 @@ class Game:
                             selected_unit.move(new_x, new_y)
                             has_acted = True
                             selected_unit.is_selected = False
-                            self.game_log.add_message('Player mouved', 'mouvement')
+                            self.game_log.add_message('Player moved', 'mouvement')
                             self.game_log.draw()
 
                     if event.type == pygame.KEYDOWN:
@@ -193,7 +192,6 @@ class Game:
                             self.game_log.draw()
                 self.draw_highlighted_cells(valid_cells)
         
-
     def handle_enemy_turn(self):
         """Simple AI for the enemy's turn."""
         for enemy in self.enemy_units:
@@ -249,7 +247,7 @@ def main():
     world = World(GC.WORLD_X, GC.WORLD_Y, random_seed)
     tile_map = world.get_tiled_map(WEIGHTS)
 
-    screen = pygame.display.set_mode((GC.WIDTH+100, GC.HEIGHT), pygame.SRCALPHA)  # Added space for the game log
+    screen = pygame.display.set_mode((GC.WIDTH+200, GC.HEIGHT), pygame.SRCALPHA)  # Added space for the game log
     pygame.display.set_caption("Strategic Game")
 
     game = Game(screen, tile_map)
