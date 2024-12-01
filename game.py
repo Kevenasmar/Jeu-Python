@@ -239,7 +239,7 @@ class Game:
 def main():
     pygame.init()
     clock = pygame.time.Clock()
-    WEIGHTS = [20, 40, 10, 40, 10, 10]
+    WEIGHTS = [20, 40, 5, 40, 5, 5] # TERRAIN_TILES = { # Tuile d'eau,  # Tuile de sable, # Tuile de roche,# Tuile d'herbe, # Tuile de bois, # Tuile de montagne }}
     random_seed = random.randint(0, 1000)
 
     world = World(GC.WORLD_X, GC.WORLD_Y, random_seed)

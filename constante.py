@@ -6,7 +6,7 @@ class GameConstantes :
     
     WIDTH = GRID_SIZE * CELL_SIZE
     HEIGHT = GRID_SIZE * CELL_SIZE
-    FPS = 120
+    FPS = 60
     WHITE = (255, 255, 255)
     BLACK = (0, 0, 0)
     RED = (255, 0, 0)
