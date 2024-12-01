@@ -48,7 +48,6 @@ class Game:
         for dx in range(-unit.speed, unit.speed + 1):
             for dy in range(-unit.speed, unit.speed + 1):
                 if abs(dx) + abs(dy) <= unit.speed:  # Manhattan distance
-                if abs(dx) + abs(dy) <= unit.speed:  # Manhattan distance
                     x, y = unit.x + dx, unit.y + dy
                     if (
                         0 <= x < GC.WORLD_X and 0 <= y < GC.WORLD_Y  # Within grid bounds
