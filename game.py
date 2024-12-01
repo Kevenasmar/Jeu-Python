@@ -23,9 +23,9 @@ class Game:
         self.game_log = GameLog(300, GC.HEIGHT, GC.WIDTH, 0, self.screen)
         self.player_units = [
            #(x, y, health, attack, defense, speed, vision, image_path, team)
-            Archer(0, 0, 100, 5, 2, 2, 3, 'Photos/archer.jpg', 'player'),
-            Mage(1, 0, 100, 3, 1, 1, 2, 'Photos/mage.jpg', 'player'),
-            Giant(2, 0, 100, 10, 1, 1, 2, 'Photos/giant.jpg', 'player')
+            Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/archer.jpg', 'player'),
+            Mage(1, 0, 100, 3, 1, 4, 2, 'Photos/mage.jpg', 'player'),
+            Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/giant.jpg', 'player')
         ]
 
         self.enemy_units = [
@@ -104,7 +104,6 @@ class Game:
         for x in range(0, GC.WIDTH, GC.CELL_SIZE):
             for y in range(0, GC.HEIGHT, GC.CELL_SIZE):
                 rect = pygame.Rect(x, y, GC.CELL_SIZE, GC.CELL_SIZE)
-                pygame.draw.rect(self.screen, (255, 255, 255), rect, 1)
         self.game_log.draw()
         pygame.display.flip()  # Update once
     
@@ -117,37 +116,66 @@ class Game:
             unit.draw(self.screen)  # Draw units
         self.game_log.draw()
         pygame.display.flip()  # Update the display
+        
 
+
+
+        
     def draw_highlighted_cells(self, valid_cells):
-        """Draw accessible cells and highlight the one under the cursor with transparency."""
-        # Create transparent surfaces
-        valid_cell_surface = pygame.Surface((GC.CELL_SIZE, GC.CELL_SIZE), pygame.SRCALPHA)
-        valid_cell_surface.fill((0, 0, 0, 0))  # Surface complètement transparente
-        pygame.draw.rect(valid_cell_surface, (255, 255, 120), valid_cell_surface.get_rect())
+        """Draw an external blue border around the group of valid cells and fill the hovered cell in blue."""
+        # Convert the valid_cells list to a set for faster neighbor lookups
+        valid_cells_set = set(valid_cells)
 
-        hover_surface = pygame.Surface((GC.CELL_SIZE, GC.CELL_SIZE), pygame.SRCALPHA)
-        hover_surface.fill((0, 0, 0, 0))  # Surface complètement transparente
-        pygame.draw.rect(hover_surface, (255, 0, 0, 128), hover_surface.get_rect())
+        # Directions to check neighbors (top, right, bottom, left)
+        directions = [
+            (0, -1),  # Top
+            (1, 0),   # Right
+            (0, 1),   # Bottom
+            (-1, 0)   # Left
+        ]
 
-        # Draw valid cells
+        # Clear the screen and redraw the grid before drawing anything
+        self.tile_map.draw(self.screen)
+
+        # Loop through all valid cells and draw external borders
         for x, y in valid_cells:
-            rect = pygame.Rect(x * GC.CELL_SIZE, y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE)
-            self.screen.blit(valid_cell_surface, rect.topleft)
+            for i, (dx, dy) in enumerate(directions):
+                neighbor = (x + dx, y + dy)
 
-        # Get mouse position and check hover
+                # If the neighbor is not in valid_cells, draw the border
+                if neighbor not in valid_cells_set:
+                    start_pos = (x * GC.CELL_SIZE, y * GC.CELL_SIZE)  # Top-left of the cell
+                    end_pos = list(start_pos)  # Copy of start_pos
+
+                    # Adjust the line positions based on the direction
+                    if i == 0:  # Top border
+                        end_pos[0] += GC.CELL_SIZE
+                    elif i == 1:  # Right border
+                        start_pos = (start_pos[0] + GC.CELL_SIZE, start_pos[1])
+                        end_pos = (start_pos[0], start_pos[1] + GC.CELL_SIZE)
+                    elif i == 2:  # Bottom border
+                        start_pos = (start_pos[0], start_pos[1] + GC.CELL_SIZE)
+                        end_pos = (start_pos[0] + GC.CELL_SIZE, start_pos[1])
+                    elif i == 3:  # Left border
+                        end_pos[1] += GC.CELL_SIZE
+
+                    # Draw the blue border line
+                    pygame.draw.line(self.screen, (75, 118, 204), start_pos, end_pos, 2)
+
+        # Highlight the hovered cell by filling it with blue
         mouse_x, mouse_y = pygame.mouse.get_pos()
         hover_x, hover_y = mouse_x // GC.CELL_SIZE, mouse_y // GC.CELL_SIZE
 
-        # Highlight hovered cell if it's a valid cell
-        if (hover_x, hover_y) in valid_cells:
-            hover_rect = pygame.Rect(hover_x * GC.CELL_SIZE, hover_y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE)
-            self.screen.blit(hover_surface, hover_rect.topleft)
+        # If the hovered cell is in valid cells, fill it with blue
+        if (hover_x, hover_y) in valid_cells_set:
+            rect = pygame.Rect(hover_x * GC.CELL_SIZE, hover_y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE)
+            pygame.draw.rect(self.screen, (75, 118, 204, 100), rect)  # Fill the hovered cell with a blue overlay
 
-        # Redraw all units
+        # Redraw all units to ensure they appear on top of the highlights
         for unit in self.player_units + self.enemy_units:
             unit.draw(self.screen)
 
-        # Update display
+        # Update the display to reflect all changes
         self.game_log.draw()
         pygame.display.update()
 
@@ -156,14 +184,15 @@ class Game:
         """Handle the player's turn without flickering."""
         for selected_unit in self.player_units:
             if self.check_game_over():
-                return has_acted == False
-            selected_unit.is_selected == True
-
+                return False
+            
+            selected_unit.is_selected = True  # Mark the unit as selected
             valid_cells = self.calculate_valid_cells(selected_unit)
 
             self.redraw_static_elements()  # Grid and units
             self.draw_highlighted_cells(valid_cells)
             has_acted = False
+            
             while not has_acted:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
@@ -182,14 +211,15 @@ class Game:
                             self.game_log.draw()
 
                     if event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_s:  # Skip turn pour la touche s 
+                        if event.key == pygame.K_s:  # Skip turn with 's' key
                             has_acted = True
-                            selected_unit.is_selected = False
+                            selected_unit.is_selected = False  # Deselect after skipping
                             self.game_log.add_message('You skipped your turn.', 'other')
                             self.game_log.draw()
+                
                 self.draw_highlighted_cells(valid_cells)
-        
 
+        
     def handle_enemy_turn(self):
         """Simple AI for the enemy's turn."""
         for enemy in self.enemy_units:
@@ -239,7 +269,7 @@ class Game:
 def main():
     pygame.init()
     clock = pygame.time.Clock()
-    WEIGHTS = [20, 40, 5, 40, 5, 5] # TERRAIN_TILES = { # Tuile d'eau,  # Tuile de sable, # Tuile de roche,# Tuile d'herbe, # Tuile de bois, # Tuile de montagne }}
+    WEIGHTS = [25, 40, 10, 40, 10, 10] # TERRAIN_TILES = { # Tuile d'eau,  # Tuile de sable, # Tuile de roche,# Tuile d'herbe, # Tuile de bois, # Tuile de montagne }}
     random_seed = random.randint(0, 1000)
 
     world = World(GC.WORLD_X, GC.WORLD_Y, random_seed)
