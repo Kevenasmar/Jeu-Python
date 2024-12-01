@@ -182,7 +182,7 @@ class Game:
                             selected_unit.move(new_x, new_y)
                             has_acted = True
                             selected_unit.is_selected = False
-                            self.game_log.add_message('Player mouved', 'mouvement')
+                            self.game_log.add_message(f"{selected_unit.__class__.__name__} mouved", 'mouvement')
                             self.game_log.draw()
 
                     if event.type == pygame.KEYDOWN:
