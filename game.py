@@ -20,7 +20,9 @@ map = Map("map/start.map", tiles_kind, GC.CELL_SIZE)
 class Game:
     def __init__(self, screen, tile_map):
         self.screen = screen
+
         self.game_log = GameLog(300, GC.HEIGHT, GC.WIDTH, 0, self.screen)
+
         self.player_units = [
            #(x, y, health, attack, defense, speed, vision, image_path, team)
             Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/archer.jpg', 'player'),
@@ -98,7 +100,7 @@ class Game:
     #################-----------------END OF THIS PART ---------------------------########
     def redraw_static_elements(self):
         """Redraw the grid and units."""
-        self.screen.fill(GC.WHITE)  # Fill the screen with GREEN
+        self.screen.fill(GC.GREEN)  # Fill the screen with GREEN
         self.tile_map.draw(self.screen)
         # Draw the grid
         for x in range(0, GC.WIDTH, GC.CELL_SIZE):
@@ -206,8 +208,10 @@ class Game:
                         if (new_x, new_y) in valid_cells:
                             selected_unit.move(new_x, new_y)
                             has_acted = True
+
                             selected_unit.is_selected = False
                             self.game_log.add_message(f"{selected_unit.__class__.__name__} mouved", 'mouvement')
+
                             self.game_log.draw()
 
                     if event.type == pygame.KEYDOWN:

@@ -72,7 +72,7 @@ class Unit:
     def draw(self, screen):
         """Affiche l'unité sur l'écran avec son image et un rectangle de sélection si sélectionnée."""
         if self.is_selected:
-            pygame.draw.rect(screen, GC.GREEN, (self.x * GC.CELL_SIZE, self.y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE))
+            pygame.draw.rect(screen, (75, 118, 204), (self.x * GC.CELL_SIZE, self.y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE))
 
         image_rect = self.image.get_rect()
         image_rect.center = (self.x * GC.CELL_SIZE + GC.CELL_SIZE // 2, self.y * GC.CELL_SIZE + GC.CELL_SIZE // 2)

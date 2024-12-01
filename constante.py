@@ -1,8 +1,10 @@
 #constantes 
 #defini dans ce fichier toutes les constantes que tu utilise dans le code
 class GameConstantes : 
+
     GRID_SIZE = 14
     CELL_SIZE = 45
+
     
     WIDTH = GRID_SIZE * CELL_SIZE
     HEIGHT = GRID_SIZE * CELL_SIZE
