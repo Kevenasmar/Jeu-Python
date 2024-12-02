@@ -64,6 +64,12 @@ class Unit:
         else:
             print(f"Mouvement invalide : Position cible ({new_x}, {new_y}) hors limites.")
 
+    
+    def _in_range(self, target, attack_range):
+        """Vérifier si la cible est dans la portée d'attaque."""
+        return abs(self.x - target.x) <= attack_range and abs(self.y - target.y) <= attack_range
+    
+    #TO REMOVE 
     def attack(self, target):
         """Attacks a target unit."""
         if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
@@ -115,21 +121,16 @@ class Unit:
 class Archer(Unit):
     def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
         super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
-        self.range = 3  # Portée d'attaque de l'archer
         self.dot_targets = {}  # Suivre les unités affectées par la flèche en feu
 
-    def _in_range(self, target):
-        """Vérifier si la cible est dans la portée d'attaque."""
-        return abs(self.x - target.x) <= self.range and abs(self.y - target.y) <= self.range
-
-    def normal_arrow(self, target):
+    def normal_arrow(self, target, attack_range = 3):
         """Flèche normale."""
-        if self._in_range(target):
+        if super()._in_range(target, attack_range):
             target.health -= self.attack_power
 
-    def fire_arrow(self, target):
+    def fire_arrow(self, target, attack_range = 5):
         """Flèche en feu, applique des effets de dégâts sur la durée (Damage Over Time DoT)."""
-        if self._in_range(target):
+        if super()._in_range(target, attack_range):
             initial_damage = self.attack_power // 2
             dot_damage = self.attack_power // 4
             target.health -= initial_damage
@@ -148,20 +149,15 @@ class Archer(Unit):
 class Giant(Unit):
     def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
         super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
-        self.range = 1  # Portée d'attaque du géant (très faible)
 
-    def _in_range(self, target):
-        """Vérifier si la cible est dans la portée d'attaque."""
-        return abs(self.x - target.x) <= self.range and abs(self.y - target.y) <= self.range
-
-    def punch(self, target):
+    def punch(self, target, attack_range = 1):
         """Inflige des dégâts importants à la cible."""
-        if self._in_range(target):
+        if super()._in_range(target, attack_range):
             target.health -= self.attack_power * 2  # Dégâts élevés
 
-    def stomp(self, target):
+    def stomp(self, target, attack_range = 2):
         """Inflige des dégâts très importants et repousse la cible d'une case."""
-        if self._in_range(target):
+        if super()._in_range(target):
             target.health -= self.attack_power * 3  # Dégâts très élevés
 
             # Déterminer la direction du recul
@@ -188,13 +184,14 @@ class Giant(Unit):
 class Mage(Unit):
     def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
         super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
-        self.range = 4  # Portée d'attaque du mage
         self.can_walk_on_water = True
-    def _in_range(self, target):
-        """Vérifier si la cible est dans la portée d'attaque."""
-        return abs(self.x - target.x) <= self.range and abs(self.y - target.y) <= self.range
+        
+    def potion(self, target, attack_range= 6):
+        """Jette une potion magique"""
+        if super()._in_range(target, attack_range):
+            target.health -= self.attack_power  # Dégâts faibles
 
-    def heal_allies(self, target):
+    def heal_allies(self, target, attack_range = 1):
         """Soigne une unité alliée."""
-        if self._in_range(target) and target.team == self.team:
+        if super()._in_range(target, attack_range) and target.team == self.team:
             target.health += self.attack_power  # Soigne selon la puissance d'attaque du mage

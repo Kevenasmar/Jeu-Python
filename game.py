@@ -111,7 +111,7 @@ class Game:
     
     def flip_display(self):
         """Renders the game state."""
-        self.screen.fill(GC.WHITE)  # Clear the screen
+        self.screen.fill(GC.GREEN)  # Clear the screen
         self.tile_map.draw(self.screen)  # Draw the map
 
         # Draw highlighted cells first
