@@ -10,8 +10,8 @@ class GameLog :
         self.pos_x = pos_x
         self.screen = screen
         self.pos_y = pos_y
-        self.couleur_fond = (245, 222, 179)
-        self.font = pygame.font.Font("font/Modern.ttf", 36)
+        self.couleur_fond = (0, 0, 0)
+        self.font = pygame.font.Font("font/Modern.ttf", 26)
 
         self.messages = []
         self.limite = 5
@@ -21,7 +21,7 @@ class GameLog :
         if len(self.messages) >= self.limite : 
             self.messages.pop(0)
         if type == "mouvement" : 
-            couleur_text = (138,0,0)
+            couleur_text = (255,255,255)
         elif type == "attack" : 
             couleur_text = (192, 111, 90)
         elif type == "dead" : 
@@ -33,7 +33,7 @@ class GameLog :
         elif type == "game_over" :
             couleur_text = (248, 51, 84)
         elif type == "other": 
-            couleur_text = (0, 0, 0)
+            couleur_text = (255, 255, 255)
         
 
         timestamp = datetime.now().strftime("%H:%M:%S")

@@ -23,7 +23,7 @@ class Game:
 
         self.game_log = GameLog(500, GC.HEIGHT, GC.WIDTH, 0, self.screen)
 
-        self.player_units = [
+        self.player_units_p1 = [
            #(x, y, health, attack, defense, speed, vision, image_path, team)
             Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/archer.png', 'player'),
             Mage(1, 0, 100, 3, 1, 4, 2, 'Photos/mage.png', 'player'),
@@ -36,17 +36,25 @@ class Game:
             Giant(7, 6, 100, 10, 1, 1, 2, 'Photos/enemy_giant.png', 'enemy')
         ]
 
+        self.player_units_p2 = [
+           #(x, y, health, attack, defense, speed, vision, image_path, team)
+            Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/archer.png', 'player'),
+            Mage(1, 0, 100, 3, 1, 4, 2, 'Photos/mage.png', 'player'),
+            Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/giant.png', 'player')
+        ]
+
         self.tile_map = Map_Aleatoire(tile_map, TERRAIN_TILES, GC.CELL_SIZE)
         self.walkable_tiles = self.initisialize_walkable_tiles()
         #Call spawn_units after initializing player_units
         self.spawn_units()
 
 
+
     def calculate_valid_cells(self, unit):
         """Calculate accessible cells for a unit, excluding cells occupied by other units within its speed range."""
         valid_cells = []
         # Combine all units' positions
-        all_units_positions = {(u.x, u.y) for u in self.player_units + self.enemy_units}
+        all_units_positions = {(u.x, u.y) for u in self.player_units_p1 + self.player_units_p2}
 
         for dx in range(-unit.speed, unit.speed + 1):
             for dy in range(-unit.speed, unit.speed + 1):
@@ -66,34 +74,62 @@ class Game:
         set_walkable_tiles = set () 
         for x in range (GC.WORLD_X):
             for y in range (GC.WORLD_Y):
-                if any(self.tile_map.is_walkable(x, y, unit) for unit in self.player_units):
+                if any(self.tile_map.is_walkable(x, y, unit) for unit in self.player_units_p1 + self.player_units_p1 ):
                     set_walkable_tiles.add((x, y))
         return set_walkable_tiles
     
-    def get_spawn_sector(self) :
+    def get_spawn_sector_p1(self) :
         sector_width = GC.WORLD_X // 3 
         sector_height = GC.WORLD_Y // 3
-        player_sector_x = 0 #joueur spawn a la partie gauche de la map 
+        player_sector_x_p1 = 0 #joueur 1 spawn a la partie gauche de la map 
         sector_y = random.randint(0,2) #joueur spawn aleatoirement dans les 3 secteur gauche de la map
-        return (player_sector_x*sector_width, sector_y*sector_height, sector_width, sector_height) 
-        
-    def find_spawn_location (self, nbr_units) :
-        sector_x, sector_y, width, height = self.get_spawn_sector()        
+        return (player_sector_x_p1*sector_width, sector_y*sector_height, sector_width, sector_height) 
+    
+    def get_spawn_sector_p2(self) :
+        sector_width = GC.WORLD_X // 3 
+        sector_height = GC.WORLD_Y // 3
+        player_sector_x_p2 = 2 #joueur 2 spawn a la partie droite de la map 
+        sector_y = random.randint(0,2) #joueur spawn aleatoirement dans les 3 secteur gauche de la map
+        return (player_sector_x_p2*sector_width, sector_y*sector_height, sector_width, sector_height) 
+    
+    def find_spawn_location_p1 (self, nbr_units) :
+        sector_x, sector_y, width, height = self.get_spawn_sector_p1()        
         spawn_locations = []
         for x in range(sector_x, sector_x + width):
             for y in range(sector_y, sector_y + height):
-                if all(self.tile_map.is_walkable(x, y, unit) for unit in self.player_units):
+                if all(self.tile_map.is_walkable(x, y, unit) for unit in self.player_units_p1):
+                    spawn_locations.append((x, y))  
+                    if len(spawn_locations) == nbr_units :
+                        return spawn_locations
+        return spawn_locations
+    
+    def find_spawn_location_p2 (self, nbr_units) :
+        sector_x, sector_y, width, height = self.get_spawn_sector_p2()        
+        spawn_locations = []
+        for x in range(sector_x, sector_x + width):
+            for y in range(sector_y, sector_y + height):
+                if all(self.tile_map.is_walkable(x, y, unit) for unit in self.player_units_p2):
                     spawn_locations.append((x, y))  
                     if len(spawn_locations) == nbr_units :
                         return spawn_locations
         return spawn_locations
     
     def spawn_units(self) : 
-        spawn_location = self.find_spawn_location (len(self.player_units))
+        #spawn joueur 1 
+        spawn_location_p1 = self.find_spawn_location_p1 (len(self.player_units_p1))
 
-        for unit , location in zip (self.player_units, spawn_location) :
+        for unit , location in zip (self.player_units_p1, spawn_location_p1) :
             unit.x, unit.y = location 
-            self.game_log.add_message(f'{unit.__class__.__name__} spawned', 'other')
+            self.game_log.add_message(f'Player 1 {unit.__class__.__name__} spawned', 'other')
+    
+        self.game_log.draw()
+
+        #spawn joueur 1 
+        spawn_location_p2 = self.find_spawn_location_p2 (len(self.player_units_p2))
+
+        for unit , location in zip (self.player_units_p2, spawn_location_p2) :
+            unit.x, unit.y = location 
+            self.game_log.add_message(f'Player 2 {unit.__class__.__name__} spawned', 'other')
     
         self.game_log.draw()
 
@@ -119,7 +155,7 @@ class Game:
             self.draw_highlighted_cells(self.valid_cells)
 
         # Draw all units (including health bars)
-        for unit in self.player_units + self.enemy_units:
+        for unit in self.player_units_p1 + self.player_units_p2:
             unit.draw(self.screen)
 
         self.game_log.draw()  # Draw the game log
@@ -178,16 +214,18 @@ class Game:
             pygame.draw.rect(self.screen, (255,255,255, 100), rect)  # Fill the hovered cell with a blue overlay
 
         # Redraw all units to ensure they appear on top of the highlights
-        for unit in self.player_units + self.enemy_units:
+        for unit in self.player_units_p1 + self.player_units_p2:
             unit.draw(self.screen)
 
         # Update the display to reflect all changes
         self.game_log.draw()
         pygame.display.update()
 
-
-    def handle_player_turn(self):
-        for selected_unit in self.player_units:
+    #----------------player turn-------------------------#
+    def handle_player_turn(self, player_name):
+        """Handle the player's turn without flickering."""
+        self.game_log.add_message(f"Tour de {player_name}", 'other')
+        for selected_unit in self.player_units_p1 + self.player_units_p2 :
             if self.check_game_over():
                 return False
 
@@ -240,10 +278,9 @@ class Game:
                 self.flip_display()
 
 
-  
-      
+    """    
     def handle_enemy_turn(self):
-        """Simple AI for the enemy's turn."""
+        #Simple AI for the enemy's turn
         for enemy in self.enemy_units:
             if self.check_game_over():
                 return
@@ -266,10 +303,10 @@ class Game:
                     self.game_log.add_message(f"{target.__class__.__name__} was defeated!", 'lose')
         self.game_log.draw()
    
-
+    """
     def check_game_over(self):
         """Checks if the game is over and displays the winner."""
-        if not self.player_units:
+        if not self.player_units_p1 + self.player_units_p2 :
             self.game_log.add_message('Enemy wins', 'lose')
             return True
         elif not self.enemy_units:
@@ -307,11 +344,11 @@ def main():
     while running:
         game.redraw_static_elements()  # Efface et redessine la carte initialement
 
-        game.handle_player_turn()      # Tour du joueur
+        game.handle_player_turn("Player 1")      # Tour du joueur 1 
         if game.check_game_over():
             break
 
-        game.handle_enemy_turn()       # Tour de l'ennemi
+        game.handle_player_turn("Player 2")       # Tour du joueur 2
         if game.check_game_over():
             break
 
