@@ -51,7 +51,7 @@ class Unit:
         self.speed = speed
         self.vision = vision
         self.image = pygame.image.load(image_path).convert_alpha()  # Chargement de l'image
-        self.image = pygame.transform.scale(self.image, (int(0.75 * GC.CELL_SIZE), int(0.75 * GC.CELL_SIZE)))  # Échelle de l'image
+        self.image = pygame.transform.scale(self.image, (int( GC.CELL_SIZE), int( GC.CELL_SIZE)))  # Échelle de l'image
         self.team = team  # 'player' ou 'enemy'
         self.is_selected = False
 
@@ -64,52 +64,73 @@ class Unit:
         else:
             print(f"Mouvement invalide : Position cible ({new_x}, {new_y}) hors limites.")
 
+    
+    def _in_range(self, target, attack_range):
+        """Vérifier si la cible est dans la portée d'attaque."""
+        return abs(self.x - target.x) <= attack_range and abs(self.y - target.y) <= attack_range
+    
+    #TO REMOVE 
     def attack(self, target):
-        """Attaque une unité cible."""
+        """Attacks a target unit."""
         if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
-            target.health -= self.attack_power
+            target.health -= self.attack_power - target.defense
+            if target.health < 0:
+                target.health = 0  # Prevent negative health
+
 
     def draw(self, screen):
-        """Affiche l'unité sur l'écran avec son image et un rectangle de sélection si sélectionnée."""
+        """Displays the unit with the background, a health bar fully on the side, and the image."""
+        # Draw the blue background if the unit is selected
         if self.is_selected:
-            pygame.draw.rect(screen, (75, 118, 204), (self.x * GC.CELL_SIZE, self.y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE))
+            pygame.draw.rect(screen, (255,255,255), 
+                            (self.x * GC.CELL_SIZE, self.y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE))
 
+        # Draw the health bar
+        self.draw_healthbar(screen)
+
+        # Draw the unit's image
         image_rect = self.image.get_rect()
         image_rect.center = (self.x * GC.CELL_SIZE + GC.CELL_SIZE // 2, self.y * GC.CELL_SIZE + GC.CELL_SIZE // 2)
         screen.blit(self.image, image_rect)
 
-    def draw_healthbar(self, screen):
-        """Dessine une barre de santé au-dessus de la cellule de l'unité."""
-        bar_width = GC.CELL_SIZE  # Largeur de la cellule
-        bar_height = 5  # Hauteur de la barre de santé
-        bar_x = self.x * GC.CELL_SIZE  # Position X (alignée avec la cellule)
-        bar_y = self.y * GC.CELL_SIZE - bar_height - 2  # Position Y (au-dessus de la cellule)
 
-        # Barre rouge (fond - santé maximale)
+
+
+
+
+    def draw_healthbar(self, screen):
+        """Draws a vertical health bar fully aligned on the right side of the unit's cell."""
+        bar_width = 5  # Narrow health bar
+        bar_height = GC.CELL_SIZE  # Full height of the cell
+        bar_x = self.x * GC.CELL_SIZE + GC.CELL_SIZE - bar_width  # Align to the right edge of the cell
+        bar_y = self.y * GC.CELL_SIZE  # Align with the top of the cell
+
+        # Red bar (background - max health)
         pygame.draw.rect(screen, GC.RED, (bar_x, bar_y, bar_width, bar_height))
 
-        # Barre verte (santé actuelle)
-        pygame.draw.rect(screen, GC.GREEN, (bar_x, bar_y, bar_width * (self.health / 100), bar_height))
+        # Green bar (current health)
+        current_health_height = max(0, bar_height * (self.health / 100))  # Prevent negative height
+        green_bar_y = bar_y + (bar_height - current_health_height)  # Align green bar to the bottom of the red bar
+        pygame.draw.rect(screen, GC.GREEN, (bar_x, green_bar_y, bar_width, current_health_height))
+
+
+
+
 
 
 class Archer(Unit):
     def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
         super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
-        self.range = 3  # Portée d'attaque de l'archer
         self.dot_targets = {}  # Suivre les unités affectées par la flèche en feu
 
-    def _in_range(self, target):
-        """Vérifier si la cible est dans la portée d'attaque."""
-        return abs(self.x - target.x) <= self.range and abs(self.y - target.y) <= self.range
-
-    def normal_arrow(self, target):
+    def normal_arrow(self, target, attack_range = 3):
         """Flèche normale."""
-        if self._in_range(target):
+        if super()._in_range(target, attack_range):
             target.health -= self.attack_power
 
-    def fire_arrow(self, target):
+    def fire_arrow(self, target, attack_range = 5):
         """Flèche en feu, applique des effets de dégâts sur la durée (Damage Over Time DoT)."""
-        if self._in_range(target):
+        if super()._in_range(target, attack_range):
             initial_damage = self.attack_power // 2
             dot_damage = self.attack_power // 4
             target.health -= initial_damage
@@ -128,20 +149,15 @@ class Archer(Unit):
 class Giant(Unit):
     def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
         super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
-        self.range = 1  # Portée d'attaque du géant (très faible)
 
-    def _in_range(self, target):
-        """Vérifier si la cible est dans la portée d'attaque."""
-        return abs(self.x - target.x) <= self.range and abs(self.y - target.y) <= self.range
-
-    def punch(self, target):
+    def punch(self, target, attack_range = 1):
         """Inflige des dégâts importants à la cible."""
-        if self._in_range(target):
+        if super()._in_range(target, attack_range):
             target.health -= self.attack_power * 2  # Dégâts élevés
 
-    def stomp(self, target):
+    def stomp(self, target, attack_range = 2):
         """Inflige des dégâts très importants et repousse la cible d'une case."""
-        if self._in_range(target):
+        if super()._in_range(target):
             target.health -= self.attack_power * 3  # Dégâts très élevés
 
             # Déterminer la direction du recul
@@ -168,13 +184,14 @@ class Giant(Unit):
 class Mage(Unit):
     def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
         super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
-        self.range = 4  # Portée d'attaque du mage
         self.can_walk_on_water = True
-    def _in_range(self, target):
-        """Vérifier si la cible est dans la portée d'attaque."""
-        return abs(self.x - target.x) <= self.range and abs(self.y - target.y) <= self.range
+        
+    def potion(self, target, attack_range= 6):
+        """Jette une potion magique"""
+        if super()._in_range(target, attack_range):
+            target.health -= self.attack_power  # Dégâts faibles
 
-    def heal_allies(self, target):
+    def heal_allies(self, target, attack_range = 1):
         """Soigne une unité alliée."""
-        if self._in_range(target) and target.team == self.team:
+        if super()._in_range(target, attack_range) and target.team == self.team:
             target.health += self.attack_power  # Soigne selon la puissance d'attaque du mage
