@@ -348,9 +348,7 @@ class Game:
                             self.flip_display()
                             break
 
-    def handle_player_turn(self):
-        for selected_unit in self.player_units:
-    #----------------player turn-------------------------#
+
     def handle_player_turn(self, player_name):
         """Handle the player's turn without flickering."""
         self.game_log.add_message(f"Tour de {player_name}", 'other')
@@ -456,7 +454,7 @@ class Game:
                     self.game_log.add_message(f"{target.__class__.__name__} was defeated!", 'lose')
         self.game_log.draw()
    
-    """
+    
     def check_game_over(self):
         """Checks if the game is over and displays the winner."""
         if not self.player_units_p1 + self.player_units_p2 :
