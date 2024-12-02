@@ -186,6 +186,22 @@ class Game:
         pygame.display.update()
 
 
+    def handle_attack(self,selected_unit):
+        #Check if any enemies are in range for each attack
+        valid_attacks = {}
+        for attack_range in selected_unit.ranges:
+        valid_attack_cells = self.calculate_valid_attack_cells(selected_unit, attack_range)
+        if valid_attack_cells:
+            valid_attacks[attack_range] = valid_attack_cells
+        if not valid_attacks:
+            self.game_log.add_message(f"No enemies in range for {selected_unit.__class__.__name__}.", 'other')
+            return
+        # Prompt the player if they want to attack
+        self.game_log.add_message("Enemies in range. Attack? (y/n)", 'attack')
+        self.game_log.draw()
+        pygame.display.flip()
+
+
     def handle_player_turn(self):
         for selected_unit in self.player_units:
             if self.check_game_over():
@@ -196,6 +212,7 @@ class Game:
             self.flip_display()  # Ensure screen refresh includes units
             has_acted = False
 
+            #Ask player if they want to move
             self.game_log.add_message(f"{selected_unit.__class__.__name__}'s turn. Move? (y/n)", 'mouvement')
             self.game_log.draw()
             pygame.display.flip()
@@ -233,11 +250,11 @@ class Game:
                                 self.game_log.add_message(f"{selected_unit.__class__.__name__} moved", 'mouvement')
                                 self.redraw_static_elements()
                                 self.flip_display()
-            else:
-                selected_unit.is_selected = False
-                self.game_log.add_message(f"{selected_unit.__class__.__name__} skipped turn.", 'mouvement')
-                self.redraw_static_elements()
-                self.flip_display()
+            self.handle_attack(selected_unit)
+            #End of turn for the selected unit
+            selected_unit.is_selected = False
+            self.redraw_static_elements()
+            self.flip_display()
 
 
   
