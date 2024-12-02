@@ -21,7 +21,7 @@ class Game:
     def __init__(self, screen, tile_map):
         self.screen = screen
 
-        self.game_log = GameLog(300, GC.HEIGHT, GC.WIDTH, 0, self.screen)
+        self.game_log = GameLog(500, GC.HEIGHT, GC.WIDTH, 0, self.screen)
 
         self.player_units = [
            #(x, y, health, attack, defense, speed, vision, image_path, team)
@@ -183,47 +183,61 @@ class Game:
 
 
     def handle_player_turn(self):
-        """Handle the player's turn without flickering."""
         for selected_unit in self.player_units:
             if self.check_game_over():
                 return False
-            
-            selected_unit.is_selected = True  # Mark the unit as selected
-            valid_cells = self.calculate_valid_cells(selected_unit)
 
-            self.redraw_static_elements()  # Grid and units
-            self.draw_highlighted_cells(valid_cells)
+            selected_unit.is_selected = True
+            self.redraw_static_elements()  # Ensure grid is drawn
+            self.flip_display()  # Ensure screen refresh includes units
             has_acted = False
-            
-            while not has_acted:
+
+            self.game_log.add_message(f"{selected_unit.__class__.__name__}'s turn. Move? (y/n)", 'mouvement')
+            self.game_log.draw()
+            pygame.display.flip()
+
+            moving = None
+            while moving is None:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         pygame.quit()
                         exit()
-
-                    if event.type == pygame.MOUSEBUTTONDOWN:
-                        mouse_x, mouse_y = pygame.mouse.get_pos()
-                        new_x, new_y = mouse_x // GC.CELL_SIZE, mouse_y // GC.CELL_SIZE
-
-                        if (new_x, new_y) in valid_cells:
-                            selected_unit.move(new_x, new_y)
-                            has_acted = True
-
-                            selected_unit.is_selected = False
-                            self.game_log.add_message(f"{selected_unit.__class__.__name__} mouved", 'mouvement')
-
-                            self.game_log.draw()
-
                     if event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_s:  # Skip turn with 's' key
-                            has_acted = True
-                            selected_unit.is_selected = False  # Deselect after skipping
-                            self.game_log.add_message('You skipped your turn.', 'other')
-                            self.game_log.draw()
-                
+                        if event.key == pygame.K_y:
+                            moving = True
+                        elif event.key == pygame.K_n:
+                            moving = False
+
+            if moving:
+                valid_cells = self.calculate_valid_cells(selected_unit)
                 self.draw_highlighted_cells(valid_cells)
 
-        
+                while not has_acted:
+                    self.draw_highlighted_cells(valid_cells)  # Continuously redraw the highlighted cells
+
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            pygame.quit()
+                            exit()
+                        if event.type == pygame.MOUSEBUTTONDOWN:
+                            mouse_x, mouse_y = pygame.mouse.get_pos()
+                            new_x, new_y = mouse_x // GC.CELL_SIZE, mouse_y // GC.CELL_SIZE
+                            if (new_x, new_y) in valid_cells:
+                                selected_unit.move(new_x, new_y)
+                                has_acted = True
+                                selected_unit.is_selected = False
+                                self.game_log.add_message(f"{selected_unit.__class__.__name__} moved", 'mouvement')
+                                self.redraw_static_elements()
+                                self.flip_display()
+            else:
+                selected_unit.is_selected = False
+                self.game_log.add_message(f"{selected_unit.__class__.__name__} skipped turn.", 'mouvement')
+                self.redraw_static_elements()
+                self.flip_display()
+
+
+  
+      
     def handle_enemy_turn(self):
         """Simple AI for the enemy's turn."""
         for enemy in self.enemy_units:
@@ -279,7 +293,7 @@ def main():
     world = World(GC.WORLD_X, GC.WORLD_Y, random_seed)
     tile_map = world.get_tiled_map(WEIGHTS)
 
-    screen = pygame.display.set_mode((GC.WIDTH+300, GC.HEIGHT), pygame.SRCALPHA)  # Added space for the game log
+    screen = pygame.display.set_mode((GC.WIDTH+500, GC.HEIGHT), pygame.SRCALPHA)  # Added space for the game log
 
     pygame.display.set_caption("Strategic Game")
 
