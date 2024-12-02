@@ -51,7 +51,7 @@ class Unit:
         self.speed = speed
         self.vision = vision
         self.image = pygame.image.load(image_path).convert_alpha()  # Chargement de l'image
-        self.image = pygame.transform.scale(self.image, (int(0.75 * GC.CELL_SIZE), int(0.75 * GC.CELL_SIZE)))  # Échelle de l'image
+        self.image = pygame.transform.scale(self.image, (int( GC.CELL_SIZE), int( GC.CELL_SIZE)))  # Échelle de l'image
         self.team = team  # 'player' ou 'enemy'
         self.is_selected = False
 
@@ -65,31 +65,51 @@ class Unit:
             print(f"Mouvement invalide : Position cible ({new_x}, {new_y}) hors limites.")
 
     def attack(self, target):
-        """Attaque une unité cible."""
+        """Attacks a target unit."""
         if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
-            target.health -= self.attack_power
+            target.health -= self.attack_power - target.defense
+            if target.health < 0:
+                target.health = 0  # Prevent negative health
+
 
     def draw(self, screen):
-        """Affiche l'unité sur l'écran avec son image et un rectangle de sélection si sélectionnée."""
+        """Displays the unit with the background, a health bar fully on the side, and the image."""
+        # Draw the blue background if the unit is selected
         if self.is_selected:
-            pygame.draw.rect(screen, (75, 118, 204), (self.x * GC.CELL_SIZE, self.y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE))
+            pygame.draw.rect(screen, (75, 118, 204), 
+                            (self.x * GC.CELL_SIZE, self.y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE))
 
+        # Draw the health bar
+        self.draw_healthbar(screen)
+
+        # Draw the unit's image
         image_rect = self.image.get_rect()
         image_rect.center = (self.x * GC.CELL_SIZE + GC.CELL_SIZE // 2, self.y * GC.CELL_SIZE + GC.CELL_SIZE // 2)
         screen.blit(self.image, image_rect)
 
-    def draw_healthbar(self, screen):
-        """Dessine une barre de santé au-dessus de la cellule de l'unité."""
-        bar_width = GC.CELL_SIZE  # Largeur de la cellule
-        bar_height = 5  # Hauteur de la barre de santé
-        bar_x = self.x * GC.CELL_SIZE  # Position X (alignée avec la cellule)
-        bar_y = self.y * GC.CELL_SIZE - bar_height - 2  # Position Y (au-dessus de la cellule)
 
-        # Barre rouge (fond - santé maximale)
+
+
+
+
+    def draw_healthbar(self, screen):
+        """Draws a vertical health bar fully aligned on the right side of the unit's cell."""
+        bar_width = 5  # Narrow health bar
+        bar_height = GC.CELL_SIZE  # Full height of the cell
+        bar_x = self.x * GC.CELL_SIZE + GC.CELL_SIZE - bar_width  # Align to the right edge of the cell
+        bar_y = self.y * GC.CELL_SIZE  # Align with the top of the cell
+
+        # Red bar (background - max health)
         pygame.draw.rect(screen, GC.RED, (bar_x, bar_y, bar_width, bar_height))
 
-        # Barre verte (santé actuelle)
-        pygame.draw.rect(screen, GC.GREEN, (bar_x, bar_y, bar_width * (self.health / 100), bar_height))
+        # Green bar (current health)
+        current_health_height = max(0, bar_height * (self.health / 100))  # Prevent negative height
+        green_bar_y = bar_y + (bar_height - current_health_height)  # Align green bar to the bottom of the red bar
+        pygame.draw.rect(screen, GC.GREEN, (bar_x, green_bar_y, bar_width, current_health_height))
+
+
+
+
 
 
 class Archer(Unit):
