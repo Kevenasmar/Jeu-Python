@@ -122,19 +122,21 @@ class Archer(Unit):
     def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
         super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
         self.dot_targets = {}  # Suivre les unités affectées par la flèche en feu
+        #Attack ranges
+        self.normal_arrow_range = 3
+        self.fire_arrow_range = 5
+        self.ranges = [self.normal_arrow_range, self.fire_arrow_range]
 
-    def normal_arrow(self, target, attack_range = 3):
+    def normal_arrow(self, target):
         """Flèche normale."""
-        if super()._in_range(target, attack_range):
-            target.health -= self.attack_power
+        target.health -= self.attack_power
 
-    def fire_arrow(self, target, attack_range = 5):
+    def fire_arrow(self, target):
         """Flèche en feu, applique des effets de dégâts sur la durée (Damage Over Time DoT)."""
-        if super()._in_range(target, attack_range):
-            initial_damage = self.attack_power // 2
-            dot_damage = self.attack_power // 4
-            target.health -= initial_damage
-            self.dot_targets[target] = {'damage': dot_damage, 'turns': 3}
+        initial_damage = self.attack_power // 2
+        dot_damage = self.attack_power // 4
+        target.health -= initial_damage
+        self.dot_targets[target] = {'damage': dot_damage, 'turns': 3}
 
     def apply_dot(self):
         """Applique le DoT sur les ennemis affectés."""
@@ -149,49 +151,51 @@ class Archer(Unit):
 class Giant(Unit):
     def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
         super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
+        self.punch_range = 1
+        self.stomp_range = 2 
+        self.ranges = [self.punch_range, self.stomp_range]
 
-    def punch(self, target, attack_range = 1):
+    def punch(self, target):
         """Inflige des dégâts importants à la cible."""
-        if super()._in_range(target, attack_range):
-            target.health -= self.attack_power * 2  # Dégâts élevés
+        target.health -= self.attack_power * 2  # Dégâts élevés
 
-    def stomp(self, target, attack_range = 2):
+    def stomp(self, target):
         """Inflige des dégâts très importants et repousse la cible d'une case."""
-        if super()._in_range(target):
-            target.health -= self.attack_power * 3  # Dégâts très élevés
+        target.health -= self.attack_power * 3  # Dégâts très élevés
 
-            # Déterminer la direction du recul
-            dx = target.x - self.x
-            dy = target.y - self.y
+        # Déterminer la direction du recul
+        dx = target.x - self.x
+        dy = target.y - self.y
 
-            # Normaliser la direction du recul
-            if dx != 0:
-                dx = int(dx / abs(dx))
-            if dy != 0:
-                dy = int(dy / abs(dy))
+        # Normaliser la direction du recul
+        if dx != 0:
+            dx = int(dx / abs(dx))
+        if dy != 0:
+            dy = int(dy / abs(dy))
 
-            # Appliquer le recul d'une case
-            new_x = target.x + dx
-            new_y = target.y + dy
+        # Appliquer le recul d'une case
+        new_x = target.x + dx
+        new_y = target.y + dy
 
-            # S'assurer que la cible ne sort pas de la grille
-            if 0 <= new_x < GC.GRID_SIZE:
-                target.x = new_x
-            if 0 <= new_y < GC.GRID_SIZE:
-                target.y = new_y
+        # S'assurer que la cible ne sort pas de la grille
+        if 0 <= new_x < GC.GRID_SIZE:
+            target.x = new_x
+        if 0 <= new_y < GC.GRID_SIZE:
+            target.y = new_y
 
 
 class Mage(Unit):
     def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
         super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
         self.can_walk_on_water = True
+        self.heal_range = 1
+        self.potion_range = 6
+        self.ranges = [self.heal_range, self.potion_range]
         
-    def potion(self, target, attack_range= 6):
+    def potion(self, target):
         """Jette une potion magique"""
-        if super()._in_range(target, attack_range):
-            target.health -= self.attack_power  # Dégâts faibles
+        target.health -= self.attack_power  # Dégâts faibles
 
-    def heal_allies(self, target, attack_range = 1):
+    def heal_allies(self, target):
         """Soigne une unité alliée."""
-        if super()._in_range(target, attack_range) and target.team == self.team:
-            target.health += self.attack_power  # Soigne selon la puissance d'attaque du mage
+        target.health += self.attack_power  # Soigne selon la puissance d'attaque du mage
