@@ -23,13 +23,13 @@ class Game:
         self.game_log = GameLog(200, GC.HEIGHT, GC.WIDTH, 0, self.screen)
         self.player_units = [
            #(x, y, health, attack, defense, speed, vision, image_path, team)
-            Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/archer.jpg', 'player'),
-            Mage(1, 0, 100, 3, 1, 4, 2, 'Photos/mage.jpg', 'player'),
-            Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/giant.jpg', 'player')
+            Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/archer.png', 'player'),
+            Mage(1, 0, 100, 3, 1, 4, 2, 'Photos/mage.png', 'player'),
+            Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/giant.png', 'player')
         ]
 
         self.enemy_units = [
-            Archer(5, 6, 100, 5, 2, 2, 3, 'Photos/enemy_archer.jpg', 'enemy'),
+            Archer(5, 6, 100, 5, 2, 2, 3, 'Photos/enemy_archer.png', 'enemy'),
             Mage(6, 6, 100, 3, 1, 1, 2, 'Photos/enemy_mage.png', 'enemy'),
             Giant(7, 6, 100, 10, 1, 1, 2, 'Photos/enemy_giant.png', 'enemy')
         ]
@@ -113,15 +113,19 @@ class Game:
     
     def flip_display(self):
         """Renders the game state."""
-        self.screen.fill(GC.WHITE) # Fill the screen with black
+        self.screen.fill(GC.WHITE)  # Clear the screen
         self.tile_map.draw(self.screen)  # Draw the map
 
-        for unit in self.player_units + self.enemy_units:
-            unit.draw(self.screen)  # Draw units
-        self.game_log.draw()
-        pygame.display.flip()  # Update the display
-        
+        # Draw highlighted cells first
+        if hasattr(self, 'valid_cells') and self.valid_cells:  # Ensure valid_cells is defined
+            self.draw_highlighted_cells(self.valid_cells)
 
+        # Draw all units (including health bars)
+        for unit in self.player_units + self.enemy_units:
+            unit.draw(self.screen)
+
+        self.game_log.draw()  # Draw the game log
+        pygame.display.flip()  # Update the display
 
 
         
