@@ -38,9 +38,9 @@ class Game:
 
         self.player_units_p2 = [
            #(x, y, health, attack, defense, speed, vision, image_path, team)
-            Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/archer.jpg', 'player'),
-            Mage(1, 0, 100, 3, 1, 4, 2, 'Photos/mage.jpg', 'player'),
-            Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/giant.jpg', 'player')
+            Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/archer.png', 'player'),
+            Mage(1, 0, 100, 3, 1, 4, 2, 'Photos/mage.png', 'player'),
+            Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/giant.png', 'player')
         ]
 
         self.tile_map = Map_Aleatoire(tile_map, TERRAIN_TILES, GC.CELL_SIZE)
@@ -155,7 +155,7 @@ class Game:
             self.draw_highlighted_cells(self.valid_cells)
 
         # Draw all units (including health bars)
-        for unit in self.player_units + self.enemy_units:
+        for unit in self.player_units_p1 + self.player_units_p2:
             unit.draw(self.screen)
 
         self.game_log.draw()  # Draw the game log
@@ -221,17 +221,11 @@ class Game:
         self.game_log.draw()
         pygame.display.update()
 
-<<<<<<< HEAD
     #----------------player turn-------------------------#
     def handle_player_turn(self, player_name):
         """Handle the player's turn without flickering."""
         self.game_log.add_message(f"Tour de {player_name}", 'other')
         for selected_unit in self.player_units_p1 + self.player_units_p2 :
-=======
-
-    def handle_player_turn(self):
-        for selected_unit in self.player_units:
->>>>>>> origin/master
             if self.check_game_over():
                 return False
 
@@ -260,9 +254,6 @@ class Game:
                 valid_cells = self.calculate_valid_cells(selected_unit)
                 self.draw_highlighted_cells(valid_cells)
 
-<<<<<<< HEAD
-    """    
-=======
                 while not has_acted:
                     self.draw_highlighted_cells(valid_cells)  # Continuously redraw the highlighted cells
 
@@ -287,9 +278,7 @@ class Game:
                 self.flip_display()
 
 
-  
-      
->>>>>>> origin/master
+    """    
     def handle_enemy_turn(self):
         #Simple AI for the enemy's turn
         for enemy in self.enemy_units:
