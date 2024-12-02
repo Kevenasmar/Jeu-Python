@@ -111,7 +111,7 @@ class Game:
     
     def flip_display(self):
         """Renders the game state."""
-        self.screen.fill(GC.WHITE)  # Clear the screen
+        self.screen.fill(GC.GREEN)  # Clear the screen
         self.tile_map.draw(self.screen)  # Draw the map
 
         # Draw highlighted cells first
@@ -166,7 +166,7 @@ class Game:
                         end_pos[1] += GC.CELL_SIZE
 
                     # Draw the blue border line
-                    pygame.draw.line(self.screen, (75, 118, 204), start_pos, end_pos, 2)
+                    pygame.draw.line(self.screen, (255,255,255), start_pos, end_pos, 2)
 
         # Highlight the hovered cell by filling it with blue
         mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -175,7 +175,7 @@ class Game:
         # If the hovered cell is in valid cells, fill it with blue
         if (hover_x, hover_y) in valid_cells_set:
             rect = pygame.Rect(hover_x * GC.CELL_SIZE, hover_y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE)
-            pygame.draw.rect(self.screen, (75, 118, 204, 100), rect)  # Fill the hovered cell with a blue overlay
+            pygame.draw.rect(self.screen, (255,255,255, 100), rect)  # Fill the hovered cell with a blue overlay
 
         # Redraw all units to ensure they appear on top of the highlights
         for unit in self.player_units + self.enemy_units:

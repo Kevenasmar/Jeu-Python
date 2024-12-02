@@ -76,7 +76,7 @@ class Unit:
         """Displays the unit with the background, a health bar fully on the side, and the image."""
         # Draw the blue background if the unit is selected
         if self.is_selected:
-            pygame.draw.rect(screen, (75, 118, 204), 
+            pygame.draw.rect(screen, (255,255,255), 
                             (self.x * GC.CELL_SIZE, self.y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE))
 
         # Draw the health bar
