@@ -153,6 +153,7 @@ class Giant(Unit):
         super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
         self.punch_range = 1
         self.stomp_range = 2 
+        self.ranges = [self.punch_range, self.stomp_range]
 
     def punch(self, target):
         """Inflige des dégâts importants à la cible."""
@@ -189,6 +190,7 @@ class Mage(Unit):
         self.can_walk_on_water = True
         self.heal_range = 1
         self.potion_range = 6
+        self.ranges = [self.heal_range, self.potion_range]
         
     def potion(self, target):
         """Jette une potion magique"""
