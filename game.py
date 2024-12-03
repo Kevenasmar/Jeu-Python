@@ -29,7 +29,8 @@ class Game:
            #(x, y, health, attack, defense, speed, vision, image_path, team)
             Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/archer.png', 'player'),
             Mage(1, 0, 100, 3, 1, 4, 2, 'Photos/mage.png', 'player'),
-            Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/giant.png', 'player')
+            Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/giant.png', 'player'),
+            # Bomber(3, 0, 100, 7, 1, 4, 2, 'Photos/bomber.png', 'player')
         ] 
 
         self.enemy_units = [
@@ -42,7 +43,8 @@ class Game:
            #(x, y, health, attack, defense, speed, vision, image_path, team)
             Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/enemy_archer.png', 'player'),
             Mage(1, 0, 100, 3, 1, 4, 2, 'Photos/enemy_mage.png', 'player'),
-            Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/enemy_giant.png', 'player')
+            Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/enemy_giant.png', 'player'),
+            # Bomber(3, 0, 100, 7, 1, 4, 2, 'Photos/enemy_bomber.png', 'player')
         ]
 
         self.tile_map = Map_Aleatoire(tile_map, TERRAIN_TILES, GC.CELL_SIZE)
@@ -135,6 +137,37 @@ class Game:
                         valid_cells.append((x, y))
 
         return valid_cells
+    
+    def has_line_of_sight(self, start, end):
+        """
+        Check if there's an unobstructed line-of-sight between two points.
+        Uses Bresenham's line algorithm to trace the line and checks for solid tiles.
+        """
+        x0, y0 = start
+        x1, y1 = end
+        dx = abs(x1 - x0)
+        dy = abs(y1 - y0)
+        sx = 1 if x0 < x1 else -1
+        sy = 1 if y0 < y1 else -1
+        err = dx - dy
+
+        while True:
+            # Check if the tile at (x0, y0) is a wall
+            tile = self.tile_map.terrain_tiles[self.tile_map.terrain_data[y0][x0]]
+            if isinstance(tile, UnwalkableTile) and not isinstance(tile, WaterTile):  # Only walls block LoS
+                return False
+
+            if (x0, y0) == (x1, y1):  # Reached the target
+                return True
+
+            e2 = 2 * err
+            if e2 > -dy:
+                err -= dy
+                x0 += sx
+            if e2 < dx:
+                err += dx
+                y0 += sy
+
     
     def redraw_static_elements(self):
         """Redraw the grid and units."""
@@ -231,14 +264,14 @@ class Game:
 
                     # Ensure the cell is within the grid boundaries
                     if 0 <= cell_x < GC.WORLD_X and 0 <= cell_y < GC.WORLD_Y:
-                        # Check if an opponent unit is in the cell
                         for opponent in opponent_units:
                             if (opponent.x, opponent.y) == (cell_x, cell_y):
-                                valid_attack_cells.append(opponent)
-                                break  # Stop further checks for this cell
-
-        print(f"Valid attack cells for {unit.__class__.__name__} ({unit.x}, {unit.y}): {[(u.x, u.y) for u in valid_attack_cells]}")
+                                # Add LoS check here
+                                if self.has_line_of_sight((unit.x, unit.y), (cell_x, cell_y)):
+                                    valid_attack_cells.append(opponent)
+                                    break  # Stop further checks for this cell
         return valid_attack_cells
+
 
     def calculate_valid_heal_cells(self, unit, heal_range, ally_units):
         valid_heal_cells = []
@@ -291,6 +324,38 @@ class Game:
             return
     
         self.perform_attack(giant, valid_attacks, opponent_units)
+
+    def handle_attack_for_bomber(self, bomber, opponent_units):
+        """
+        Handles the Bomber's attack logic, including knockback.
+        """
+        valid_targets = self.calculate_valid_attack_cells(bomber, bomber.bomb_range, opponent_units)
+        if not valid_targets:
+            self.game_log.add_message("No valid targets for Bomber's bomb.", 'other')
+            return
+
+        # Highlight the cells in range for the bomb
+        valid_cells = [(unit.x, unit.y) for unit in valid_targets]
+        self.draw_highlighted_cells(valid_cells)
+        self.game_log.add_message("Choose a target for the bomb.", 'attack')
+        self.game_log.draw()
+        pygame.display.flip()
+
+        # Let the player choose a target
+        target_chosen = False
+        while not target_chosen:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_x, mouse_y = pygame.mouse.get_pos()
+                    target_x, target_y = mouse_x // GC.CELL_SIZE, mouse_y // GC.CELL_SIZE
+                    if (target_x, target_y) in valid_cells:
+                        bomber.throw_bomb(target_x, target_y, self.player_units_p1 + self.player_units_p2, self.tile_map)
+                        self.game_log.add_message("Bomber threw a bomb!", 'attack')
+                        target_chosen = True
+
 
     def handle_attack_for_mage(self, mage, ally_units, opponent_units):
         valid_attacks = {}
@@ -399,7 +464,7 @@ class Game:
             self.flip_display()  # Ensure screen refresh includes units
             has_acted = False
 
-            #Ask player if they want to move
+            # Ask player if they want to move
             self.game_log.add_message(f"{selected_unit.__class__.__name__}'s turn. Move? (y/n)", 'mouvement')
             self.game_log.draw()
             pygame.display.flip()
@@ -415,6 +480,7 @@ class Game:
                             moving = True
                         elif event.key == pygame.K_n:
                             moving = False
+                            selected_unit.is_selected = False  # Deselect the unit if not moved
 
             if moving:
                 valid_cells = self.calculate_valid_cells(selected_unit)
@@ -433,40 +499,78 @@ class Game:
                             if (new_x, new_y) in valid_cells:
                                 selected_unit.move(new_x, new_y)
                                 has_acted = True
-                                selected_unit.is_selected = False
                                 self.game_log.add_message(f"{selected_unit.__class__.__name__} moved", 'mouvement')
                                 self.redraw_static_elements()
                                 self.flip_display()
-            
-            # Ask player if they want to attack
-            self.game_log.add_message(f"{selected_unit.__class__.__name__}'s turn. Attack? (y/n)", 'attack')
-            self.game_log.draw()
-            pygame.display.flip()
-            attacking = None
-            while attacking is None:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        pygame.quit()
-                        exit()
-                    if event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_y:
-                            attacking = True
-                        elif event.key == pygame.K_n:
-                            attacking = False 
-                            
-            if attacking:           
-                #Call the appropriate handle_attack function for the selected unit
-                if isinstance(selected_unit, Archer):
-                    self.handle_attack_for_archer(selected_unit, opponent_units)
-                elif isinstance(selected_unit, Giant):
-                    self.handle_attack_for_giant(selected_unit, opponent_units)
-                elif isinstance(selected_unit, Mage):
-                    self.handle_attack_for_mage(selected_unit, ally_units, opponent_units)                                
 
-            #End of turn for the selected unit
-            selected_unit.is_selected = False
-            self.redraw_static_elements()
-            self.flip_display()
+            # Determine attack logic
+            valid_attacks = []
+            los_blocked = False
+            in_range = False
+
+            for opponent in opponent_units:
+                for attack_range in selected_unit.ranges:
+                    if selected_unit._in_range(opponent, attack_range):
+                        in_range = True
+                        if self.has_line_of_sight((selected_unit.x, selected_unit.y), (opponent.x, opponent.y)):
+                            valid_attacks.append(opponent)
+                        else:
+                            los_blocked = True
+
+            # Logic for handling various cases
+            if in_range and not valid_attacks and los_blocked:
+                # Range but no LoS
+                self.game_log.add_message("Enemy in range but not in sight. Get a better visual!", 'other')
+                selected_unit.is_selected = False  # Deselect the unit
+                self.flip_display()
+                continue
+
+            if valid_attacks:
+                # Range and LoS
+                self.game_log.add_message(f"{selected_unit.__class__.__name__}'s turn. Attack? (y/n)", 'attack')
+                self.game_log.draw()
+                pygame.display.flip()
+
+                attacking = None
+                while attacking is None:
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            pygame.quit()
+                            exit()
+                        if event.type == pygame.KEYDOWN:
+                            if event.key == pygame.K_y:
+                                attacking = True
+                            elif event.key == pygame.K_n:
+                                attacking = False
+                                selected_unit.is_selected = False  # Skip attack, deselect unit
+
+                if attacking:
+                    # Call appropriate attack handler
+                    if isinstance(selected_unit, Archer):
+                        self.handle_attack_for_archer(selected_unit, opponent_units)
+                    elif isinstance(selected_unit, Giant):
+                        self.handle_attack_for_giant(selected_unit, opponent_units)
+                    elif isinstance(selected_unit, Mage):
+                        self.handle_attack_for_mage(selected_unit, ally_units, opponent_units)
+
+                    selected_unit.is_selected = False  # End turn for the unit
+                    self.redraw_static_elements()
+                    self.flip_display()
+                    continue
+
+            if not in_range and not valid_attacks:
+                # No range and no LoS
+                self.game_log.add_message("No enemies in range. Moving to the next unit.", 'other')
+                selected_unit.is_selected = False  # Deselect the unit
+                self.flip_display()
+                continue
+
+            if in_range and not valid_attacks:
+                # LoS but no range
+                self.game_log.add_message("Enemy in range but abilities are out of range. Moving to the next unit.", 'other')
+                selected_unit.is_selected = False  # Deselect the unit
+                self.flip_display()
+                continue
 
     def handle_enemy_turn(self):
         #Simple AI for the enemy's turn

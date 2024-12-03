@@ -206,3 +206,42 @@ class Mage(Unit):
             target.health = min(target.health, 100)  # Cap health at 100
         else:
             print(f"Cannot heal {target.__class__.__name__}, they are not an ally!")
+
+class Bomber(Unit):
+    def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
+        super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
+        self.bomb_range = 3  # Range to throw bombs
+        self.bomb_aoe = 1    # Radius of bomb's area of effect
+
+    def throw_bomb(self, target_x, target_y, all_units, tile_map):
+        """
+        Throws a bomb at the specified coordinates, dealing AoE damage and knocking back affected units.
+        """
+        affected_units = []  # Collect all units in the AoE
+        for unit in all_units:
+            # Calculate Manhattan distance from the target point
+            distance = abs(unit.x - target_x) + abs(unit.y - target_y)
+            if distance <= self.bomb_aoe:
+                affected_units.append(unit)
+
+        # Apply damage and knockback to all affected units
+        for unit in affected_units:
+            unit.take_damage(self.attack)  # Use Bomber's attack value for damage
+            print(f"Bomber dealt {self.attack} damage to {unit.__class__.__name__} at ({unit.x}, {unit.y}).")
+
+            # Calculate knockback direction (away from the bomb's center)
+            dx = unit.x - target_x
+            dy = unit.y - target_y
+            knockback_x = unit.x + (1 if dx > 0 else -1 if dx < 0 else 0)
+            knockback_y = unit.y + (1 if dy > 0 else -1 if dy < 0 else 0)
+
+            # Check if the knockback position is valid
+            if 0 <= knockback_x < tile_map.width and 0 <= knockback_y < tile_map.height:
+                if tile_map.is_walkable(knockback_x, knockback_y, None):
+                    unit.x, unit.y = knockback_x, knockback_y
+                    print(f"{unit.__class__.__name__} was knocked back to ({unit.x}, {unit.y}).")
+                else:
+                    print(f"{unit.__class__.__name__} couldn't be knocked back due to obstacle.")
+            else:
+                print(f"{unit.__class__.__name__} couldn't be knocked back due to boundary.")
+
