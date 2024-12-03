@@ -8,6 +8,8 @@ from configureWorld import*
 from World_Drawer import *
 from world import*
 from GameLog import * # type: ignore
+from menu import *  # Import menu functions
+
 # Setup tiles
 tiles_kind = [
     SandTile(),  # False veut dire que la case n'est pas solide tu peux marcher
@@ -249,7 +251,6 @@ class Game:
 
         return valid_heal_cells
 
-
     def handle_attack_for_archer(self, archer, opponent_units):
         valid_attacks = {}
         if archer.normal_arrow_range:
@@ -306,7 +307,6 @@ class Game:
 
         self.perform_attack(mage, valid_attacks, opponent_units + ally_units)  # Include all units to validate the target
 
-
     def perform_attack(self, unit, valid_attacks, all_units):
         if not valid_attacks:
             self.game_log.add_message(f"No valid targets for {unit.__class__.__name__}.", 'other')
@@ -352,13 +352,34 @@ class Game:
                     # Check if the clicked cell matches any valid target position
                     for target in all_units:  # Validate against all units
                         if (target.x, target.y) == (target_x, target_y) and (target_x, target_y) in valid_cells:
-                            action_method(target)  # Perform the selected action
+                            # Check for a headshot in the action method
+                            if hasattr(action_method, '__name__') and action_method.__name__ == "normal_arrow":
+                                import random
+                                headshot_probability = 0.04  # 4% chance of headshot
+                                if random.random() < headshot_probability:
+                                    target.health = 0  # Instant kill
+                                    self.game_log.add_message(f"Headshot ! {target.__class__.__name__} a été éliminé d'un seul coup !", 'action')
+                                else:
+                                    action_method(target)  # Normal attack
+                            else:
+                                action_method(target)  # Perform the selected action (non-arrow actions)
+
+                            # Check if the target is dead
+                            if target.health <= 0:
+                                self.game_log.add_message(f"{target.__class__.__name__} est mort !", 'dead')
+                                if target in self.player_units_p1:
+                                    self.player_units_p1.remove(target)
+                                elif target in self.player_units_p2:
+                                    self.player_units_p2.remove(target)
+                                    
                             target_chosen = True
-                            self.game_log.add_message(f"{unit.__class__.__name__} performed {action_method.__name__} on {target.__class__.__name__}.", 'action')
+                            self.game_log.add_message(
+                                f"{unit.__class__.__name__} performed {action_method.__name__} on {target.__class__.__name__}.",
+                                'attack'
+                            )
                             self.redraw_static_elements()
                             self.flip_display()
                             return
-
 
     def handle_player_turn(self, player_name, opponent_units, ally_units):
         """Handle the player's turn without flickering."""
@@ -490,34 +511,60 @@ class Game:
 def main():
     pygame.init()
     clock = pygame.time.Clock()
-    WEIGHTS = [25, 40, 10, 40, 10, 10] # TERRAIN_TILES = { # Tuile d'eau,  # Tuile de sable, # Tuile de roche,# Tuile d'herbe, # Tuile de bois, # Tuile de montagne }}
-    random_seed = random.randint(0, 1000)
 
+    # Initialize the screen with extra space for the game log
+    screen = pygame.display.set_mode((GC.WIDTH + 500, GC.HEIGHT), pygame.SRCALPHA)
+    pygame.display.set_caption("L'Ascension des Héros")
+
+    # Display the menu
+    from menu import main_menu, rules_screen  # Import menu functions
+    action = main_menu(screen)  # Show the main menu
+    if action == "play":
+        # Show the rules screen
+        p1_images = [
+            pygame.image.load('Photos/archer.png'),
+            pygame.image.load('Photos/mage.png'),
+            pygame.image.load('Photos/giant.png'),
+        ]
+        p2_images = [
+            pygame.image.load('Photos/enemy_archer.png'),
+            pygame.image.load('Photos/enemy_mage.png'),
+            pygame.image.load('Photos/enemy_giant.png'),
+        ]
+        for i in range(len(p1_images)):
+            p1_images[i] = pygame.transform.scale(p1_images[i], (50, 50))
+            p2_images[i] = pygame.transform.scale(p2_images[i], (50, 50))
+
+        rules_screen(screen, p1_images, p2_images)
+
+    # Initialize the game world and map
+    WEIGHTS = [25, 40, 10, 40, 10, 10]  # TERRAIN_TILES weights
+    random_seed = random.randint(0, 1000)
     world = World(GC.WORLD_X, GC.WORLD_Y, random_seed)
     tile_map = world.get_tiled_map(WEIGHTS)
 
-    screen = pygame.display.set_mode((GC.WIDTH+500, GC.HEIGHT), pygame.SRCALPHA)  # Added space for the game log
-
-    pygame.display.set_caption("Strategic Game")
-
+    # Create the game instance
     game = Game(screen, tile_map)
 
     running = True
     while running:
-        game.redraw_static_elements()  # Efface et redessine la carte initialement
+        game.redraw_static_elements()  # Draw the map and initial state
 
-        game.handle_player_turn("Player 1", game.player_units_p2, game.player_units_p1 )      # Tour du joueur 1 
+        # Player 1's turn
+        game.handle_player_turn("Player 1", game.player_units_p2, game.player_units_p1)
         if game.check_game_over():
             break
 
-        game.handle_player_turn("Player 2", game.player_units_p1, game.player_units_p2)       # Tour du joueur 2
+        # Player 2's turn
+        game.handle_player_turn("Player 2", game.player_units_p1, game.player_units_p2)
         if game.check_game_over():
             break
 
-        pygame.display.flip()          # Un seul flip après tout
+        pygame.display.flip()  # Update the display once per cycle
         clock.tick(60)
 
     pygame.quit()
+
 
 if __name__ == "__main__":
     main()
