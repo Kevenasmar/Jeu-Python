@@ -197,5 +197,9 @@ class Mage(Unit):
         target.health -= self.attack_power  # Dégâts faibles
 
     def heal_allies(self, target):
-        """Soigne une unité alliée."""
-        target.health += self.attack_power  # Soigne selon la puissance d'attaque du mage
+        """Heal an allied unit."""
+        if target.team == self.team:  # Only heal allies
+            target.health += self.attack_power
+            target.health = min(target.health, 100)  # Cap health at 100
+        else:
+            print(f"Cannot heal {target.__class__.__name__}, they are not an ally!")

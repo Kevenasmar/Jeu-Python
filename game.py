@@ -28,19 +28,13 @@ class Game:
             Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/archer.png', 'player'),
             Mage(1, 0, 100, 3, 1, 4, 2, 'Photos/mage.png', 'player'),
             Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/giant.png', 'player')
-        ]
-
-        self.enemy_units = [
-            Archer(5, 6, 100, 5, 2, 2, 3, 'Photos/enemy_archer.png', 'enemy'),
-            Mage(6, 6, 100, 3, 1, 1, 2, 'Photos/enemy_mage.png', 'enemy'),
-            Giant(7, 6, 100, 10, 1, 1, 2, 'Photos/enemy_giant.png', 'enemy')
-        ]
+        ] 
 
         self.player_units_p2 = [
            #(x, y, health, attack, defense, speed, vision, image_path, team)
-            Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/archer.png', 'player'),
-            Mage(1, 0, 100, 3, 1, 4, 2, 'Photos/mage.png', 'player'),
-            Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/giant.png', 'player')
+            Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/enemy_archer.png', 'player'),
+            Mage(1, 0, 100, 3, 1, 4, 2, 'Photos/enemy_mage.png', 'player'),
+            Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/enemy_giant.png', 'player')
         ]
 
         self.tile_map = Map_Aleatoire(tile_map, TERRAIN_TILES, GC.CELL_SIZE)
@@ -48,43 +42,7 @@ class Game:
         #Call spawn_units after initializing player_units
         self.spawn_units()
 
-
-
-    def calculate_valid_cells(self, unit):
-        """Calculate accessible cells for a unit, excluding cells occupied by other units within its speed range."""
-        valid_cells = []
-        # Combine all units' positions
-        all_units_positions = {(u.x, u.y) for u in self.player_units_p1 + self.player_units_p2}
-
-        for dx in range(-unit.speed, unit.speed + 1):
-            for dy in range(-unit.speed, unit.speed + 1):
-                if abs(dx) + abs(dy) <= unit.speed:  # Manhattan distance
-                    x, y = unit.x + dx, unit.y + dy
-                    if (
-                        0 <= x < GC.WORLD_X and 0 <= y < GC.WORLD_Y  # Within grid bounds
-                        and self.tile_map.is_walkable(x, y, unit)    # Tile is walkable
-                        and (x, y) not in all_units_positions        # Not occupied by another unit
-                    ):
-                        valid_cells.append((x, y))
-
-        return valid_cells
-    
-    def calculate_valid_attack_cells(self, unit, attack_range):
-        valid_attack_cells = []
-        unit_x, unit_y = unit.x, unit.y
-
-        for dx in range(-attack_range, attack_range + 1):
-            for dy in range(-attack_range, attack_range + 1):
-                if abs(dx) + abs(dy) <= attack_range:  # Manhattan distance
-                    cell_x, cell_y = unit_x + dx, unit_y + dy
-
-                    # Ensure the cell is within the bounds of the grid
-                    if 0 <= cell_x < GC.WORLD_X and 0 <= cell_y < GC.WORLD_Y:
-                        valid_attack_cells.append((cell_x, cell_y))
-
-        return valid_attack_cells
-
-    ##################--------Making sure that the units doesn't spawn on non walkable tiles------------######## 
+    '''--------Making sure that the units doesn't spawn on non walkable tiles------------''' 
     def initisialize_walkable_tiles(self) :
         set_walkable_tiles = set () 
         for x in range (GC.WORLD_X):
@@ -139,7 +97,7 @@ class Game:
     
         self.game_log.draw()
 
-        #spawn joueur 1 
+        #spawn joueur 2
         spawn_location_p2 = self.find_spawn_location_p2 (len(self.player_units_p2))
 
         for unit , location in zip (self.player_units_p2, spawn_location_p2) :
@@ -148,7 +106,28 @@ class Game:
     
         self.game_log.draw()
 
-    #################-----------------END OF THIS PART ---------------------------########
+    '''-----------------END OF THIS PART ---------------------------'''
+    
+    '''Utilities, display and movement'''
+    def calculate_valid_cells(self, unit):
+        """Calculate accessible cells for a unit, excluding cells occupied by other units within its speed range."""
+        valid_cells = []
+        # Combine all units' positions
+        all_units_positions = {(u.x, u.y) for u in self.player_units_p1 + self.player_units_p2}
+
+        for dx in range(-unit.speed, unit.speed + 1):
+            for dy in range(-unit.speed, unit.speed + 1):
+                if abs(dx) + abs(dy) <= unit.speed:  # Manhattan distance
+                    x, y = unit.x + dx, unit.y + dy
+                    if (
+                        0 <= x < GC.WORLD_X and 0 <= y < GC.WORLD_Y  # Within grid bounds
+                        and self.tile_map.is_walkable(x, y, unit)    # Tile is walkable
+                        and (x, y) not in all_units_positions        # Not occupied by another unit
+                    ):
+                        valid_cells.append((x, y))
+
+        return valid_cells
+    
     def redraw_static_elements(self):
         """Redraw the grid and units."""
         self.screen.fill(GC.GREEN)  # Fill the screen with GREEN
@@ -234,97 +213,129 @@ class Game:
         self.game_log.draw()
         pygame.display.update()
 
-    def handle_attack_for_archer(self, archer):
+    '''Attacks'''
+    def calculate_valid_attack_cells(self, unit, attack_range, opponent_units):
+        valid_attack_cells = []
+        for dx in range(-attack_range, attack_range + 1):
+            for dy in range(-attack_range, attack_range + 1):
+                if abs(dx) + abs(dy) <= attack_range:  # Manhattan distance
+                    cell_x, cell_y = unit.x + dx, unit.y + dy
+
+                    # Ensure the cell is within the grid boundaries
+                    if 0 <= cell_x < GC.WORLD_X and 0 <= cell_y < GC.WORLD_Y:
+                        # Check if an opponent unit is in the cell
+                        for opponent in opponent_units:
+                            if (opponent.x, opponent.y) == (cell_x, cell_y):
+                                valid_attack_cells.append(opponent)
+                                break  # Stop further checks for this cell
+
+        print(f"Valid attack cells for {unit.__class__.__name__} ({unit.x}, {unit.y}): {[(u.x, u.y) for u in valid_attack_cells]}")
+        return valid_attack_cells
+
+    def calculate_valid_heal_cells(self, unit, heal_range, ally_units):
+        valid_heal_cells = []
+        for dx in range(-heal_range, heal_range + 1):
+            for dy in range(-heal_range, heal_range + 1):
+                if abs(dx) + abs(dy) <= heal_range:  # Manhattan distance
+                    cell_x, cell_y = unit.x + dx, unit.y + dy
+
+                    # Ensure the cell is within the grid boundaries
+                    if 0 <= cell_x < GC.WORLD_X and 0 <= cell_y < GC.WORLD_Y:
+                        # Check if an ally unit is in the cell
+                        for ally in ally_units:
+                            if (ally.x, ally.y) == (cell_x, cell_y) and ally.health < 100:  # Only include injured allies
+                                valid_heal_cells.append(ally)
+                                break  # Stop further checks for this cell
+
+        return valid_heal_cells
+
+
+    def handle_attack_for_archer(self, archer, opponent_units):
         valid_attacks = {}
         if archer.normal_arrow_range:
-            valid_cells = [
-                enemy for enemy in self.enemy_units if archer._in_range(enemy, archer.normal_arrow_range)
-            ]            
-            if valid_cells:
-                    valid_attacks["Normal Arrow"] = (archer.normal_arrow, valid_cells)
+            valid_targets = self.calculate_valid_attack_cells(archer, archer.normal_arrow_range, opponent_units)
+            if valid_targets:
+                valid_attacks["Normal Arrow"] = (archer.normal_arrow, valid_targets)
+
         if archer.fire_arrow_range:
-            valid_cells = [
-                enemy for enemy in self.enemy_units if archer._in_range(enemy, archer.fire_arrow_range)
-            ]            
-            if valid_cells:
-                valid_attacks["Fire Arrow"] = (archer.fire_arrow, valid_cells)
-       
+            valid_targets = self.calculate_valid_attack_cells(archer, archer.fire_arrow_range, opponent_units)
+            if valid_targets:
+                valid_attacks["Fire Arrow"] = (archer.fire_arrow, valid_targets)
+
         if not valid_attacks:
             self.game_log.add_message("No enemies in range for Archer.", 'other')
             return
-        
-        self.perform_attack(archer, valid_attacks)
-            
-    def handle_attack_for_giant(self, giant):
+
+        self.perform_attack(archer, valid_attacks, opponent_units)
+     
+    def handle_attack_for_giant(self, giant, opponent_units):
         valid_attacks = {}
         if giant.punch_range:
-            valid_cells = [
-                enemy for enemy in self.enemy_units if giant._in_range(enemy, giant.punch_range)
-            ]            
-            if valid_cells:
-                valid_attacks["Punch"] = (giant.punch, valid_cells)
+            valid_targets = self.calculate_valid_attack_cells(giant, giant.punch_range, opponent_units)         
+            if valid_targets:
+                valid_attacks["Punch"] = (giant.punch, valid_targets)
         if giant.stomp_range:
-            valid_cells = [
-                enemy for enemy in self.enemy_units if giant._in_range(enemy, giant.stomp_range)
-            ]            
-            if valid_cells:
-                valid_attacks["Stomp"] = (giant.stomp, valid_cells)
+            valid_targets = self.calculate_valid_attack_cells(giant, giant.stomp_range, opponent_units)         
+            if valid_targets:
+                valid_attacks["Stomp"] = (giant.stomp, valid_targets)
 
         if not valid_attacks:
             self.game_log.add_message("No enemies in range for Giant.", 'other')
             return
     
-        self.perform_attack(giant, valid_attacks)
+        self.perform_attack(giant, valid_attacks, opponent_units)
 
-    def handle_attack_for_mage(self, mage):
+    def handle_attack_for_mage(self, mage, ally_units, opponent_units):
         valid_attacks = {}
+
+        # Handle healing ability
         if mage.heal_range:
-            valid_cells = [
-                ally for ally in self.player_units if mage._in_range(ally, mage.heal_range) and ally != mage
-            ]            
-            if valid_cells:
-                valid_attacks["Heal"] = (mage.heal_allies, valid_cells)
+            valid_heal_targets = self.calculate_valid_heal_cells(mage, mage.heal_range, ally_units)
+            if valid_heal_targets:
+                valid_attacks["Heal"] = (mage.heal_allies, valid_heal_targets)
+
+        # Handle attack ability
         if mage.potion_range:
-            valid_cells = [
-                enemy for enemy in self.enemy_units if mage._in_range(enemy, mage.potion_range)
-            ]            
-            if valid_cells:
-                valid_attacks["Potion"] = (mage.potion, valid_cells)
+            valid_attack_targets = self.calculate_valid_attack_cells(mage, mage.potion_range, opponent_units)
+            if valid_attack_targets:
+                valid_attacks["Potion"] = (mage.potion, valid_attack_targets)
 
         if not valid_attacks:
             self.game_log.add_message("No valid targets for Mage.", 'other')
             return
-        
-        self.perform_attack(mage, valid_attacks)
 
-    def perform_attack(self, unit, valid_attacks):
+        self.perform_attack(mage, valid_attacks, opponent_units + ally_units)  # Include all units to validate the target
+
+
+    def perform_attack(self, unit, valid_attacks, all_units):
         if not valid_attacks:
             self.game_log.add_message(f"No valid targets for {unit.__class__.__name__}.", 'other')
             return
 
-        self.game_log.add_message("Choose your attack:", 'attack')
+        # Display attack options
+        self.game_log.add_message("Choose your action:", 'attack')
         attack_options = {}
-        for i, (attack_name, (method, targets)) in enumerate(valid_attacks.items(), start=1):
+        for i, (action_name, (method, targets)) in enumerate(valid_attacks.items(), start=1):
             # Extract positions of the valid targets
             attack_options[i] = (method, [(target.x, target.y) for target in targets])
-            self.game_log.add_message(f"{i}: {attack_name}", 'attack')
+            self.game_log.add_message(f"{i}: {action_name}", 'attack')
 
         self.game_log.draw()
         pygame.display.flip()
 
-        # Let the player choose an attack
-        chosen_attack = None
-        while chosen_attack is None:
+        # Let the player choose an action
+        chosen_action = None
+        while chosen_action is None:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     exit()
                 if event.type == pygame.KEYDOWN and event.unicode.isdigit():
-                    attack_index = int(event.unicode)
-                    if attack_index in attack_options:
-                        chosen_attack = attack_options[attack_index]
+                    action_index = int(event.unicode)
+                    if action_index in attack_options:
+                        chosen_action = attack_options[action_index]
 
-        attack_method, valid_cells = chosen_attack
+        action_method, valid_cells = chosen_action
         self.draw_highlighted_cells(valid_cells)
 
         # Let the player select a target
@@ -339,20 +350,20 @@ class Game:
                     target_x, target_y = mouse_x // GC.CELL_SIZE, mouse_y // GC.CELL_SIZE
 
                     # Check if the clicked cell matches any valid target position
-                    for enemy in self.enemy_units:
-                        if (enemy.x, enemy.y) == (target_x, target_y) and (enemy.x, enemy.y) in valid_cells:
-                            attack_method(enemy)
+                    for target in all_units:  # Validate against all units
+                        if (target.x, target.y) == (target_x, target_y) and (target_x, target_y) in valid_cells:
+                            action_method(target)  # Perform the selected action
                             target_chosen = True
-                            self.game_log.add_message(f"{unit.__class__.__name__} attacked {enemy.__class__.__name__}.", 'attack')
+                            self.game_log.add_message(f"{unit.__class__.__name__} performed {action_method.__name__} on {target.__class__.__name__}.", 'action')
                             self.redraw_static_elements()
                             self.flip_display()
-                            break
+                            return
 
 
-    def handle_player_turn(self, player_name):
+    def handle_player_turn(self, player_name, opponent_units, ally_units):
         """Handle the player's turn without flickering."""
         self.game_log.add_message(f"Tour de {player_name}", 'other')
-        for selected_unit in self.player_units_p1 + self.player_units_p2 :
+        for selected_unit in (self.player_units_p1 if player_name == "Player 1" else self.player_units_p2):
             if self.check_game_over():
                 return False
 
@@ -419,11 +430,11 @@ class Game:
             if attacking:           
                 #Call the appropriate handle_attack function for the selected unit
                 if isinstance(selected_unit, Archer):
-                    self.handle_attack_for_archer(selected_unit)
+                    self.handle_attack_for_archer(selected_unit, opponent_units)
                 elif isinstance(selected_unit, Giant):
-                    self.handle_attack_for_giant(selected_unit)
+                    self.handle_attack_for_giant(selected_unit, opponent_units)
                 elif isinstance(selected_unit, Mage):
-                    self.handle_attack_for_mage(selected_unit)                                
+                    self.handle_attack_for_mage(selected_unit, ally_units, opponent_units)                                
 
             #End of turn for the selected unit
             selected_unit.is_selected = False
@@ -454,14 +465,13 @@ class Game:
                     self.game_log.add_message(f"{target.__class__.__name__} was defeated!", 'lose')
         self.game_log.draw()
    
-    
     def check_game_over(self):
         """Checks if the game is over and displays the winner."""
-        if not self.player_units_p1 + self.player_units_p2 :
-            self.game_log.add_message('Enemy wins', 'lose')
+        if not self.player_units_p1:
+            self.game_log.add_message('Player 2 wins!', 'win')
             return True
-        elif not self.enemy_units:
-            self.game_log.add_message('Player wins', 'win')
+        elif not self.player_units_p2:
+            self.game_log.add_message('Player 1 wins!', 'win')
             return True
         return False
 
@@ -475,6 +485,7 @@ class Game:
         pygame.time.wait(3000)  # Pause for 3 seconds
         pygame.quit()
         exit()
+
 
 def main():
     pygame.init()
@@ -495,11 +506,11 @@ def main():
     while running:
         game.redraw_static_elements()  # Efface et redessine la carte initialement
 
-        game.handle_player_turn("Player 1")      # Tour du joueur 1 
+        game.handle_player_turn("Player 1", game.player_units_p2, game.player_units_p1 )      # Tour du joueur 1 
         if game.check_game_over():
             break
 
-        game.handle_player_turn("Player 2")       # Tour du joueur 2
+        game.handle_player_turn("Player 2", game.player_units_p1, game.player_units_p2)       # Tour du joueur 2
         if game.check_game_over():
             break
 
