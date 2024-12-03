@@ -355,7 +355,7 @@ class Game:
                             # Check for a headshot in the action method
                             if hasattr(action_method, '__name__') and action_method.__name__ == "normal_arrow":
                                 import random
-                                headshot_probability = 0.04  # 4% chance of headshot
+                                headshot_probability = 1  # 4% chance of headshot
                                 if random.random() < headshot_probability:
                                     target.health = 0  # Instant kill
                                     self.game_log.add_message(f"Headshot ! {target.__class__.__name__} a été éliminé d'un seul coup !", 'action')
@@ -515,55 +515,68 @@ def main():
     # Initialize the screen with extra space for the game log
     screen = pygame.display.set_mode((GC.WIDTH + 500, GC.HEIGHT), pygame.SRCALPHA)
     pygame.display.set_caption("L'Ascension des Héros")
-
-    # Display the menu
-    from menu import main_menu, rules_screen  # Import menu functions
+    
+    
     action = main_menu(screen)  # Show the main menu
-    if action == "play":
-        # Show the rules screen
-        p1_images = [
-            pygame.image.load('Photos/archer.png'),
-            pygame.image.load('Photos/mage.png'),
-            pygame.image.load('Photos/giant.png'),
-        ]
-        p2_images = [
-            pygame.image.load('Photos/enemy_archer.png'),
-            pygame.image.load('Photos/enemy_mage.png'),
-            pygame.image.load('Photos/enemy_giant.png'),
-        ]
-        for i in range(len(p1_images)):
-            p1_images[i] = pygame.transform.scale(p1_images[i], (50, 50))
-            p2_images[i] = pygame.transform.scale(p2_images[i], (50, 50))
+    while True or rematch == True:  # Main loop for handling restarts
+        rematch = False
+        # Display the menu
+        if action == "play":
+            # Show the rules screen
+            p1_images = [
+                pygame.image.load('Photos/archer.png'),
+                pygame.image.load('Photos/mage.png'),
+                pygame.image.load('Photos/giant.png'),
+            ]
+            p2_images = [
+                pygame.image.load('Photos/enemy_archer.png'),
+                pygame.image.load('Photos/enemy_mage.png'),
+                pygame.image.load('Photos/enemy_giant.png'),
+            ]
+            for i in range(len(p1_images)):
+                p1_images[i] = pygame.transform.scale(p1_images[i], (50, 50))
+                p2_images[i] = pygame.transform.scale(p2_images[i], (50, 50))
 
-        rules_screen(screen, p1_images, p2_images)
+            rules_screen(screen, p1_images, p2_images)
 
-    # Initialize the game world and map
-    WEIGHTS = [25, 40, 10, 40, 10, 10]  # TERRAIN_TILES weights
-    random_seed = random.randint(0, 1000)
-    world = World(GC.WORLD_X, GC.WORLD_Y, random_seed)
-    tile_map = world.get_tiled_map(WEIGHTS)
+        # Initialize the game world and map
+        WEIGHTS = [25, 40, 10, 40, 10, 10]  # TERRAIN_TILES weights
+        random_seed = random.randint(0, 1000)
+        world = World(GC.WORLD_X, GC.WORLD_Y, random_seed)
+        tile_map = world.get_tiled_map(WEIGHTS)
 
-    # Create the game instance
-    game = Game(screen, tile_map)
+        # Create the game instance
+        game = Game(screen, tile_map)
 
-    running = True
-    while running:
-        game.redraw_static_elements()  # Draw the map and initial state
+        winner = None
+        running = True
+        while running:
+            game.redraw_static_elements()  # Draw the map and initial state
 
-        # Player 1's turn
-        game.handle_player_turn("Player 1", game.player_units_p2, game.player_units_p1)
-        if game.check_game_over():
-            break
+            # Player 1's turn
+            game.handle_player_turn("Player 1", game.player_units_p2, game.player_units_p1)
+            if game.check_game_over():
+                winner = "Player 1"
+                break
 
-        # Player 2's turn
-        game.handle_player_turn("Player 2", game.player_units_p1, game.player_units_p2)
-        if game.check_game_over():
-            break
+            # Player 2's turn
+            game.handle_player_turn("Player 2", game.player_units_p1, game.player_units_p2)
+            if game.check_game_over():
+                winner = "Player 2"
+                break
 
-        pygame.display.flip()  # Update the display once per cycle
-        clock.tick(60)
+            pygame.display.flip()  # Update the display once per cycle
+            clock.tick(60)
 
-    pygame.quit()
+        # Display Game Over menu and handle user action
+        if winner:
+            action = game_over_menu(screen, winner)
+            if action == "rematch":
+                rematch = True
+            elif action == "quit":
+                pygame.quit()
+                sys.exit()
+
 
 
 if __name__ == "__main__":
