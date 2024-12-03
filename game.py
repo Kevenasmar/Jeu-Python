@@ -22,7 +22,6 @@ map = Map("map/start.map", tiles_kind, GC.CELL_SIZE)
 class Game:
     def __init__(self, screen, tile_map):
         self.screen = screen
-
         self.game_log = GameLog(500, GC.HEIGHT, GC.WIDTH, 0, self.screen)
 
         self.player_units_p1 = [
@@ -30,20 +29,21 @@ class Game:
             Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/archer.png', 'player'),
             Mage(1, 0, 100, 3, 1, 4, 2, 'Photos/mage.png', 'player'),
             Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/giant.png', 'player'),
-            # Bomber(3, 0, 100, 7, 1, 4, 2, 'Photos/bomber.png', 'player')
+            Bomber(3, 0, 100, 7, 1, 4, 2, 'Photos/bomber.png', 'player')
         ] 
 
         self.player_units_p2 = [
            #(x, y, health, attack, defense, speed, vision, image_path, team)
-            Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/enemy_archer.png', 'player'),
-            Mage(1, 0, 100, 3, 1, 4, 2, 'Photos/enemy_mage.png', 'player'),
-            Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/enemy_giant.png', 'player'),
-            # Bomber(3, 0, 100, 7, 1, 4, 2, 'Photos/enemy_bomber.png', 'player')
+            Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/enemy_archer.png', 'enemy'),
+            Mage(1, 0, 100, 3, 1, 4, 2, 'Photos/enemy_mage.png', 'enemy'),
+            Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/enemy_giant.png', 'enemy'),
+            Bomber(3, 0, 100, 7, 1, 4, 2, 'Photos/enemy_bomber.png', 'enemy')
         ]
 
         self.tile_map = Map_Aleatoire(tile_map, TERRAIN_TILES, GC.CELL_SIZE)
         self.walkable_tiles = self.initisialize_walkable_tiles()
-        #Call spawn_units after initializing player_units
+
+        # Initialize spawn for bomber units as well
         self.spawn_units()
 
     '''--------Making sure that the units doesn't spawn on non walkable tiles------------''' 
@@ -250,6 +250,7 @@ class Game:
 
     '''Attacks'''
     def calculate_valid_attack_cells(self, unit, attack_range, opponent_units):
+        """Update this function to calculate valid cells for the bomber."""
         valid_attack_cells = []
         for dx in range(-attack_range, attack_range + 1):
             for dy in range(-attack_range, attack_range + 1):
@@ -260,10 +261,9 @@ class Game:
                     if 0 <= cell_x < GC.WORLD_X and 0 <= cell_y < GC.WORLD_Y:
                         for opponent in opponent_units:
                             if (opponent.x, opponent.y) == (cell_x, cell_y):
-                                # Add LoS check here
                                 if self.has_line_of_sight((unit.x, unit.y), (cell_x, cell_y)):
                                     valid_attack_cells.append(opponent)
-                                    break  # Stop further checks for this cell
+                                    break
         return valid_attack_cells
 
 
@@ -321,21 +321,23 @@ class Game:
 
     def handle_attack_for_bomber(self, bomber, opponent_units):
         """
-        Handles the Bomber's attack logic, including knockback.
+        Handles the Bomber's attack logic, allowing bombs to hit all units within range.
         """
+        # Calculate valid targets within the Bomber's attack range
         valid_targets = self.calculate_valid_attack_cells(bomber, bomber.bomb_range, opponent_units)
+
         if not valid_targets:
             self.game_log.add_message("No valid targets for Bomber's bomb.", 'other')
             return
 
-        # Highlight the cells in range for the bomb
+        # Highlight the valid cells for the bomb's AoE
         valid_cells = [(unit.x, unit.y) for unit in valid_targets]
         self.draw_highlighted_cells(valid_cells)
         self.game_log.add_message("Choose a target for the bomb.", 'attack')
         self.game_log.draw()
         pygame.display.flip()
 
-        # Let the player choose a target
+        # Allow the player to choose a target
         target_chosen = False
         while not target_chosen:
             for event in pygame.event.get():
@@ -346,9 +348,24 @@ class Game:
                     mouse_x, mouse_y = pygame.mouse.get_pos()
                     target_x, target_y = mouse_x // GC.CELL_SIZE, mouse_y // GC.CELL_SIZE
                     if (target_x, target_y) in valid_cells:
-                        bomber.throw_bomb(target_x, target_y, self.player_units_p1 + self.player_units_p2, self.tile_map)
-                        self.game_log.add_message("Bomber threw a bomb!", 'attack')
-                        target_chosen = True
+                        # Handle bomb throwing based on the occurrence of valid targets
+                        affected_targets = [
+                            target for target in valid_targets if (target.x, target.y) == (target_x, target_y)
+                        ]
+
+                        if affected_targets:
+                            bomber.throw_bomb(
+                                target=affected_targets[0],
+                                all_units=self.player_units_p1 + self.player_units_p2,
+                                tile_map=self.tile_map,
+                                game_instance=self  # Pass the Game instance for logging
+                            )
+                            self.game_log.add_message(
+                                f"Bomber threw a bomb at ({target_x}, {target_y})!", 'attack'
+                            )
+                            target_chosen = True
+
+
 
 
     def handle_attack_for_mage(self, mage, ally_units, opponent_units):
@@ -447,8 +464,8 @@ class Game:
                             return
 
     def handle_player_turn(self, player_name, opponent_units, ally_units):
-        """Handle the player's turn without flickering."""
-        self.game_log.add_message(f"Tour de {player_name}", 'other')
+        """Handle the player's turn, including movement and attacks."""
+        self.game_log.add_message(f"{player_name}'s turn", 'other')
         for selected_unit in (self.player_units_p1 if player_name == "Player 1" else self.player_units_p2):
             if self.check_game_over():
                 return False
@@ -546,6 +563,8 @@ class Game:
                         self.handle_attack_for_giant(selected_unit, opponent_units)
                     elif isinstance(selected_unit, Mage):
                         self.handle_attack_for_mage(selected_unit, ally_units, opponent_units)
+                    elif isinstance(selected_unit, Bomber):
+                        self.handle_attack_for_bomber(selected_unit, opponent_units)
 
                     selected_unit.is_selected = False  # End turn for the unit
                     self.redraw_static_elements()
@@ -565,6 +584,7 @@ class Game:
                 selected_unit.is_selected = False  # Deselect the unit
                 self.flip_display()
                 continue
+
 
     def handle_enemy_turn(self):
         #Simple AI for the enemy's turn

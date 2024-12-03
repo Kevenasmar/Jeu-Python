@@ -207,38 +207,37 @@ class Mage(Unit):
 class Bomber(Unit):
     def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
         super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
-        self.bomb_range = 3  # Range to throw bombs
-        self.bomb_aoe = 1    # Radius of bomb's area of effect
+        self.bomb_range = 2  # AoE radius for the bomb
+        self.ranges = [self.bomb_range]  # Bomb's attack range
 
-    def throw_bomb(self, target_x, target_y, all_units, tile_map):
+    def throw_bomb(self, target, all_units, tile_map, game_instance):
         """
-        Throws a bomb at the specified coordinates, dealing AoE damage and knocking back affected units.
+        Throws a bomb at the specified target, dealing AoE damage to all units within range.
+        Uses the game_instance to log messages.
         """
-        affected_units = []  # Collect all units in the AoE
+        affected_units = []  # List to store all units affected by the bomb
+
+        # Identify units within the bomb's AoE
         for unit in all_units:
-            # Calculate Manhattan distance from the target point
-            distance = abs(unit.x - target_x) + abs(unit.y - target_y)
-            if distance <= self.bomb_aoe:
+            # Calculate Manhattan distance between the bomb target and the unit
+            distance = abs(unit.x - target.x) + abs(unit.y - target.y)
+            if distance <= self.bomb_range:  # Check if the unit is within AoE
                 affected_units.append(unit)
 
-        # Apply damage and knockback to all affected units
+        # Apply AoE damage to all affected units
         for unit in affected_units:
-            unit.take_damage(self.attack)  # Use Bomber's attack value for damage
-            print(f"Bomber dealt {self.attack} damage to {unit.__class__.__name__} at ({unit.x}, {unit.y}).")
+            # Apply damage
+            damage = self.attack  # Ensure `self.attack` is an integer
+            unit.health -= damage
+            game_instance.game_log.add_message(
+                f"Bomber dealt {damage} damage to {unit.__class__.__name__} at ({unit.x}, {unit.y}).", 'attack'
+            )
 
-            # Calculate knockback direction (away from the bomb's center)
-            dx = unit.x - target_x
-            dy = unit.y - target_y
-            knockback_x = unit.x + (1 if dx > 0 else -1 if dx < 0 else 0)
-            knockback_y = unit.y + (1 if dy > 0 else -1 if dy < 0 else 0)
+            # Check if the unit's health drops to 0 or below
+            if unit.health <= 0:
+                game_instance.game_log.add_message(
+                    f"{unit.__class__.__name__} at ({unit.x}, {unit.y}) has been defeated!", 'dead'
+                )
 
-            # Check if the knockback position is valid
-            if 0 <= knockback_x < tile_map.width and 0 <= knockback_y < tile_map.height:
-                if tile_map.is_walkable(knockback_x, knockback_y, None):
-                    unit.x, unit.y = knockback_x, knockback_y
-                    print(f"{unit.__class__.__name__} was knocked back to ({unit.x}, {unit.y}).")
-                else:
-                    print(f"{unit.__class__.__name__} couldn't be knocked back due to obstacle.")
-            else:
-                print(f"{unit.__class__.__name__} couldn't be knocked back due to boundary.")
-
+        # Ensure game_log is drawn after all updates
+        game_instance.game_log.draw()
