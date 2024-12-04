@@ -25,18 +25,18 @@ class Game:
 
         self.game_log = GameLog(500, GC.HEIGHT, GC.WIDTH, 0, self.screen)
 
-        self.player_units_p1 = [
+        self.player_units_p1 = [ 
            #(x, y, health, attack, defense, speed, vision, image_path, team)
             Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/archer.png', 'player'),
             Mage(1, 0, 100, 3, 1, 4, 2, 'Photos/mage.png', 'player'),
-            Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/giant.png', 'player')
+            Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/giant.png', 'player') 
         ] 
 
-        self.player_units_p2 = [
+        self.player_units_p2 = [ 
            #(x, y, health, attack, defense, speed, vision, image_path, team)
             Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/enemy_archer.png', 'player'),
             Mage(1, 0, 100, 3, 1, 4, 2, 'Photos/enemy_mage.png', 'player'),
-            Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/enemy_giant.png', 'player')
+            Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/enemy_giant.png', 'player') 
         ]
 
         self.tile_map = Map_Aleatoire(tile_map, TERRAIN_TILES, GC.CELL_SIZE)
@@ -90,22 +90,20 @@ class Game:
         return spawn_locations
     
     def spawn_units(self) : 
+        self.game_log.add_message("May the best player win!", 'attack')
+
         #spawn joueur 1 
         spawn_location_p1 = self.find_spawn_location_p1 (len(self.player_units_p1))
 
         for unit , location in zip (self.player_units_p1, spawn_location_p1) :
-            unit.x, unit.y = location 
-            self.game_log.add_message(f'Player 1 {unit.__class__.__name__} spawned', 'other')
-    
+            unit.x, unit.y = location     
         self.game_log.draw()
 
         #spawn joueur 2
         spawn_location_p2 = self.find_spawn_location_p2 (len(self.player_units_p2))
 
         for unit , location in zip (self.player_units_p2, spawn_location_p2) :
-            unit.x, unit.y = location 
-            self.game_log.add_message(f'Player 2 {unit.__class__.__name__} spawned', 'other')
-    
+            unit.x, unit.y = location     
         self.game_log.draw()
 
     '''-----------------END OF THIS PART ---------------------------'''
@@ -510,18 +508,73 @@ class Game:
 
 def main():
     pygame.init()
+    # Initialize the mixer for background music
+    pygame.mixer.init()
+
+    
+    # Load and play the background music
+    try:
+        pygame.mixer.music.load("music/music.mp3")  # Replace with your MP3 file's path
+        pygame.mixer.music.play(-1)  # -1 makes it loop indefinitely
+        pygame.mixer.music.set_volume(0.5)  # Adjust the volume (0.0 to 1.0)
+    except pygame.error as e:
+        print(f"Error loading music: {e}")
+        
     clock = pygame.time.Clock()
 
     # Initialize the screen with extra space for the game log
     screen = pygame.display.set_mode((GC.WIDTH + 500, GC.HEIGHT), pygame.SRCALPHA)
-    pygame.display.set_caption("L'Ascension des Héros")
-    
-    
-    action = main_menu(screen)  # Show the main menu
-    while True or rematch == True:  # Main loop for handling restarts
-        rematch = False
-        # Display the menu
+    pygame.display.set_caption("Rise of Heroes")
+
+    rematch = False  # Tracks if the player wants a rematch
+
+    while True:  # Main loop for handling restarts
+        if not rematch:
+            action = main_menu(screen)  # Show the main menu
+        else:
+            action = "play"  # Skip the main menu and go directly to the game
+
+        rematch = False  # Reset rematch flag
+
         if action == "play":
+            # Directly start the game
+            random_seed = random.randint(0, 1000)  # Use a random seed for map generation
+            WEIGHTS = [25, 40, 10, 40, 10, 10]  # TERRAIN_TILES weights
+            world = World(GC.WORLD_X, GC.WORLD_Y, random_seed)
+            tile_map = world.get_tiled_map(WEIGHTS)
+
+            # Create the game instance
+            game = Game(screen, tile_map)
+            winner = None
+            running = True
+            while running:
+                game.redraw_static_elements()  # Draw the map and initial state
+
+                # Player 1's turn
+                game.handle_player_turn("Player 1", game.player_units_p2, game.player_units_p1)
+                if game.check_game_over():
+                    winner = "Player 1"
+                    break
+
+                # Player 2's turn
+                game.handle_player_turn("Player 2", game.player_units_p1, game.player_units_p2)
+                if game.check_game_over():
+                    winner = "Player 2"
+                    break
+
+                pygame.display.flip()  # Update the display once per cycle
+                clock.tick(60)
+
+            # Display Game Over menu and handle user action
+            if winner:
+                action = game_over_menu(screen, winner)
+                if action == "rematch":
+                    rematch = True  # Set rematch to True to restart the game immediately
+                elif action == "quit":
+                    pygame.quit()
+                    sys.exit()
+
+        elif action == "how_to_play":
             # Show the rules screen
             p1_images = [
                 pygame.image.load('Photos/archer.png'),
@@ -537,45 +590,13 @@ def main():
                 p1_images[i] = pygame.transform.scale(p1_images[i], (50, 50))
                 p2_images[i] = pygame.transform.scale(p2_images[i], (50, 50))
 
-            rules_screen(screen, p1_images, p2_images)
+            rules_action = rules_screen(screen, p1_images, p2_images)
+            if rules_action == "back_to_menu":
+                continue  # Return to the main menu
 
-        # Initialize the game world and map
-        WEIGHTS = [25, 40, 10, 40, 10, 10]  # TERRAIN_TILES weights
-        random_seed = random.randint(0, 1000)
-        world = World(GC.WORLD_X, GC.WORLD_Y, random_seed)
-        tile_map = world.get_tiled_map(WEIGHTS)
-
-        # Create the game instance
-        game = Game(screen, tile_map)
-
-        winner = None
-        running = True
-        while running:
-            game.redraw_static_elements()  # Draw the map and initial state
-
-            # Player 1's turn
-            game.handle_player_turn("Player 1", game.player_units_p2, game.player_units_p1)
-            if game.check_game_over():
-                winner = "Player 1"
-                break
-
-            # Player 2's turn
-            game.handle_player_turn("Player 2", game.player_units_p1, game.player_units_p2)
-            if game.check_game_over():
-                winner = "Player 2"
-                break
-
-            pygame.display.flip()  # Update the display once per cycle
-            clock.tick(60)
-
-        # Display Game Over menu and handle user action
-        if winner:
-            action = game_over_menu(screen, winner)
-            if action == "rematch":
-                rematch = True
-            elif action == "quit":
-                pygame.quit()
-                sys.exit()
+        elif action == "quit":
+            pygame.quit()
+            sys.exit()
 
 
 
