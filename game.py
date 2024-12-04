@@ -196,10 +196,18 @@ class Game:
         self.game_log.draw()  # Draw the game log
         pygame.display.flip()  # Update the display
     
-    def draw_highlighted_cells(self, valid_cells):
-        """Draw an external blue border around the group of valid cells and fill the hovered cell in blue."""
-        # Convert the valid_cells list to a set for faster neighbor lookups
-        valid_cells_set = set(valid_cells)
+    def draw_highlighted_cells(self, move_cells=None, direct_cells=None, secondary_cells=None, is_attack_phase=False):
+        """
+        Draw highlighted cells with distinct colors:
+        - Movement cells: White.
+        - Direct attack cells: Red.
+        - Secondary affected cells: Yellow.
+        - Hovered cell: White for movement phase, Red for attack phase.
+        """
+        # Default to empty lists if None
+        move_cells = move_cells or []
+        direct_cells = direct_cells or []
+        secondary_cells = secondary_cells or []
 
         # Directions to check neighbors (top, right, bottom, left)
         directions = [
@@ -212,17 +220,15 @@ class Game:
         # Clear the screen and redraw the grid before drawing anything
         self.tile_map.draw(self.screen)
 
-        # Loop through all valid cells and draw external borders
-        for x, y in valid_cells:
+        # Highlight movement cells (white)
+        for x, y in move_cells:
             for i, (dx, dy) in enumerate(directions):
                 neighbor = (x + dx, y + dy)
+                if neighbor not in move_cells:
+                    start_pos = (x * GC.CELL_SIZE, y * GC.CELL_SIZE)
+                    end_pos = list(start_pos)
 
-                # If the neighbor is not in valid_cells, draw the border
-                if neighbor not in valid_cells_set:
-                    start_pos = (x * GC.CELL_SIZE, y * GC.CELL_SIZE)  # Top-left of the cell
-                    end_pos = list(start_pos)  # Copy of start_pos
-
-                    # Adjust the line positions based on the direction
+                    # Adjust line positions for the border
                     if i == 0:  # Top border
                         end_pos[0] += GC.CELL_SIZE
                     elif i == 1:  # Right border
@@ -234,17 +240,27 @@ class Game:
                     elif i == 3:  # Left border
                         end_pos[1] += GC.CELL_SIZE
 
-                    # Draw the blue border line
-                    pygame.draw.line(self.screen, (255,255,255), start_pos, end_pos, 2)
+                    # Draw the border line (white for movement cells)
+                    pygame.draw.line(self.screen, (255, 255, 255), start_pos, end_pos, 2)
 
-        # Highlight the hovered cell by filling it with blue
+        # Highlight direct attack cells (red)
+        for x, y in direct_cells:
+            rect = pygame.Rect(x * GC.CELL_SIZE, y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE)
+            pygame.draw.rect(self.screen, (255, 0, 0), rect, 2)  # Red border for direct cells
+
+        # Highlight secondary affected cells (yellow)
+        for x, y in secondary_cells:
+            rect = pygame.Rect(x * GC.CELL_SIZE, y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE)
+            pygame.draw.rect(self.screen, (255, 255, 0), rect, 2)  # Yellow border for secondary cells
+
+        # Highlight the hovered cell
         mouse_x, mouse_y = pygame.mouse.get_pos()
         hover_x, hover_y = mouse_x // GC.CELL_SIZE, mouse_y // GC.CELL_SIZE
+        hover_color = (255, 0, 0, 100) if is_attack_phase else (255, 255, 255, 100)
 
-        # If the hovered cell is in valid cells, fill it with blue
-        if (hover_x, hover_y) in valid_cells_set:
+        if (hover_x, hover_y) in move_cells + direct_cells + secondary_cells:
             rect = pygame.Rect(hover_x * GC.CELL_SIZE, hover_y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE)
-            pygame.draw.rect(self.screen, (255,255,255, 100), rect)  # Fill the hovered cell with a blue overlay
+            pygame.draw.rect(self.screen, hover_color, rect)  # Fill hovered cell with the appropriate color
 
         # Redraw all units to ensure they appear on top of the highlights
         for unit in self.player_units_p1 + self.player_units_p2:
@@ -253,6 +269,8 @@ class Game:
         # Update the display to reflect all changes
         self.game_log.draw()
         pygame.display.update()
+
+
 
     '''Attacks'''
     def calculate_valid_attack_cells(self, unit, attack_range, opponent_units):
@@ -309,6 +327,12 @@ class Game:
         self.perform_attack(archer, valid_attacks, opponent_units)
      
     def handle_attack_for_giant(self, giant, opponent_units):
+        """
+        Handles the Giant's attack logic, including Punch and Stomp.
+        Highlights:
+        - Punch: Direct target cells only.
+        - Stomp: Direct cells in red and secondary affected cells in yellow.
+        """
         valid_attacks = {}
 
         # Punch attack
@@ -321,6 +345,15 @@ class Game:
         if giant.stomp_range:
             valid_targets = self.calculate_valid_attack_cells(giant, giant.stomp_range, opponent_units)
             if valid_targets:
+                # Highlight stomp cells
+                direct_cells = [(target.x, target.y) for target in valid_targets]
+                secondary_cells = [
+                    (target.x + dx, target.y + dy)
+                    for target in valid_targets
+                    for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Surrounding cells
+                ]
+                self.draw_highlighted_cells(direct_cells=direct_cells, secondary_cells=secondary_cells)
+
                 valid_attacks["Stomp"] = (giant.stomp, valid_targets)
 
         # If no valid attacks
@@ -328,14 +361,16 @@ class Game:
             self.game_log.add_message("No enemies in range for Giant.", 'other')
             return
 
-        # Let the player choose between attacks
+        # Perform the chosen attack
         self.perform_attack(giant, valid_attacks, opponent_units)
 
 
     def handle_attack_for_bomber(self, bomber, opponent_units):
         """
         Handles the Bomber's attack logic, allowing bombs to hit all units within range.
-        Applies knockback to the target in a random direction and to other affected units away from the Bomber.
+        Highlights:
+        - Direct target cells in red.
+        - Secondary affected cells in yellow for area-of-effect damage.
         """
         # Calculate valid targets within the Bomber's attack range
         valid_targets = self.calculate_valid_attack_cells(bomber, bomber.bomb_range, opponent_units)
@@ -344,44 +379,19 @@ class Game:
             self.game_log.add_message("No valid targets for Bomber's bomb.", 'other')
             return
 
-        # Highlight the valid cells for the bomb's AoE
-        valid_cells = [(unit.x, unit.y) for unit in valid_targets]
-        self.draw_highlighted_cells(valid_cells)
-        self.game_log.add_message("Choose a target for the bomb.", 'attack')
-        self.game_log.draw()
-        pygame.display.flip()
+        # Highlight the bomb's AoE
+        direct_cells = [(target.x, target.y) for target in valid_targets]
+        secondary_cells = [
+            (cell_x, cell_y)
+            for target in valid_targets
+            for dx in range(-1, 2)
+            for dy in range(-1, 2)
+            if (cell_x := target.x + dx) != target.x or (cell_y := target.y + dy) != target.y
+        ]
+        self.draw_highlighted_cells(direct_cells=direct_cells, secondary_cells=secondary_cells)
 
-        # Allow the player to choose a target
-        target_chosen = False
-        while not target_chosen:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    exit()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    mouse_x, mouse_y = pygame.mouse.get_pos()
-                    target_x, target_y = mouse_x // GC.CELL_SIZE, mouse_y // GC.CELL_SIZE
-                    if (target_x, target_y) in valid_cells:
-                        # The target unit (unit B) is selected
-                        selected_target = valid_targets[valid_cells.index((target_x, target_y))]
-
-                        # Call the throw_bomb method with the chosen target
-                        bomber.throw_bomb(
-                            target=selected_target,
-                            all_units=self.player_units_p1 + self.player_units_p2,
-                            tile_map=self.tile_map,
-                            game_instance=self  # Pass the Game instance for logging
-                        )
-
-                        # Create the message with the list of affected units
-                        affected_units_names = [unit.__class__.__name__ for unit in valid_targets]
-                        affected_units_str = ", ".join(affected_units_names)
-
-                        self.game_log.add_message(
-                            f"Bomber threw a bomb and hit {affected_units_str}.", 'attack'
-                        )
-                        target_chosen = True
-
+        # Perform the bomb attack
+        self.perform_attack(bomber, {"Throw Bomb": (bomber.throw_bomb, valid_targets)}, opponent_units)
 
 
     
@@ -409,10 +419,9 @@ class Game:
     def perform_attack(self, unit, valid_attacks, all_units):
         """
         Handles the selection and execution of an attack action for a unit.
-
-        - Highlights valid target positions.
-        - Allows the player to choose an attack type and target.
-        - Executes the selected attack and applies its effects.
+        Highlights:
+        - Initially, only direct cells are shown.
+        - Secondary cells are shown after selecting an ability that involves them.
         """
         if not valid_attacks:
             self.game_log.add_message(f"No valid targets for {unit.__class__.__name__}.", 'other')
@@ -440,11 +449,33 @@ class Game:
                     if action_index in attack_options:
                         chosen_action = attack_options[action_index]
 
+        # Extract the chosen action details
         action_name, action_method, valid_targets = chosen_action
-        valid_cells = [(target.x, target.y) for target in valid_targets]
 
-        # Highlight valid target cells
-        self.draw_highlighted_cells(valid_cells)
+        # Calculate cells to highlight for attack
+        direct_cells = [(target.x, target.y) for target in valid_targets]
+        secondary_cells = []
+
+        # If the chosen action has secondary effects, calculate them
+        if hasattr(unit, 'stomp') and action_method == unit.stomp:
+            for target in valid_targets:
+                dx, dy = target.x - unit.x, target.y - unit.y
+                secondary_cells += [
+                    (target.x + dx, target.y + dy),       # Cell behind the target
+                    (target.x - dy, target.y - dx),       # Perpendicular cell 1
+                    (target.x + dy, target.y + dx)        # Perpendicular cell 2
+                ]
+        elif hasattr(unit, 'throw_bomb') and action_method == unit.throw_bomb:
+            for target in valid_targets:
+                secondary_cells += [
+                    (target.x + dx, target.y + dy)
+                    for dx in range(-1, 2)
+                    for dy in range(-1, 2)
+                    if (dx, dy) != (0, 0)  # Exclude the target cell itself
+                ]
+
+        # Highlight the target cells (include secondary cells only after the ability is selected)
+        self.draw_highlighted_cells(direct_cells=direct_cells, secondary_cells=secondary_cells)
 
         # Wait for the player to select a target
         target_chosen = False
@@ -460,11 +491,13 @@ class Game:
                     # Check if the selected cell matches any valid target
                     for target in valid_targets:
                         if (target.x, target.y) == (target_x, target_y):
-                            # Handle special cases like "stomp" for the Giant
+                            # Handle special abilities with additional logic
                             if hasattr(unit, 'stomp') and action_method == unit.stomp:
+                                action_method(target, all_units, self.tile_map, self)  # Pass all required context
+                            elif hasattr(unit, 'throw_bomb') and action_method == unit.throw_bomb:
                                 action_method(target, all_units, self.tile_map, self)
                             else:
-                                action_method(target)  # Standard attacks (e.g., punch, arrow)
+                                action_method(target)  # Standard attacks
 
                             # Check if the target is dead
                             if target.health <= 0:
@@ -485,6 +518,7 @@ class Game:
                             self.redraw_static_elements()
                             self.flip_display()
                             return
+
 
 
 
@@ -520,10 +554,10 @@ class Game:
 
             if moving:
                 valid_cells = self.calculate_valid_cells(selected_unit)
-                self.draw_highlighted_cells(valid_cells)
+                self.draw_highlighted_cells(move_cells=valid_cells)  # Highlight move cells in white
 
                 while not has_acted:
-                    self.draw_highlighted_cells(valid_cells)  # Continuously redraw the highlighted cells
+                    self.draw_highlighted_cells(move_cells=valid_cells)  # Continuously redraw move highlights
 
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT:
@@ -538,6 +572,7 @@ class Game:
                                 self.game_log.add_message(f"{selected_unit.__class__.__name__} moved", 'mouvement')
                                 self.redraw_static_elements()
                                 self.flip_display()
+
 
             # Determine attack logic
             valid_attacks = []
