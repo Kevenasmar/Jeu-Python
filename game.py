@@ -109,6 +109,14 @@ class Game:
         self.game_log.draw()
 
     '''-----------------END OF THIS PART ---------------------------'''
+    def is_occupied(self, x, y):
+        """
+        Checks if a tile is occupied by any unit.
+        """
+        for unit in self.player_units_p1 + self.player_units_p2:
+            if unit.x == x and unit.y == y:
+                return True
+        return False
     
     '''Utilities, display and movement'''
     def calculate_valid_cells(self, unit):
@@ -302,20 +310,27 @@ class Game:
      
     def handle_attack_for_giant(self, giant, opponent_units):
         valid_attacks = {}
+
+        # Punch attack
         if giant.punch_range:
-            valid_targets = self.calculate_valid_attack_cells(giant, giant.punch_range, opponent_units)         
+            valid_targets = self.calculate_valid_attack_cells(giant, giant.punch_range, opponent_units)
             if valid_targets:
                 valid_attacks["Punch"] = (giant.punch, valid_targets)
+
+        # Stomp attack
         if giant.stomp_range:
-            valid_targets = self.calculate_valid_attack_cells(giant, giant.stomp_range, opponent_units)         
+            valid_targets = self.calculate_valid_attack_cells(giant, giant.stomp_range, opponent_units)
             if valid_targets:
                 valid_attacks["Stomp"] = (giant.stomp, valid_targets)
 
+        # If no valid attacks
         if not valid_attacks:
             self.game_log.add_message("No enemies in range for Giant.", 'other')
             return
-    
+
+        # Let the player choose between attacks
         self.perform_attack(giant, valid_attacks, opponent_units)
+
 
     def handle_attack_for_bomber(self, bomber, opponent_units):
         """
@@ -392,22 +407,28 @@ class Game:
         self.perform_attack(mage, valid_attacks, opponent_units + ally_units)  # Include all units to validate the target
 
     def perform_attack(self, unit, valid_attacks, all_units):
+        """
+        Handles the selection and execution of an attack action for a unit.
+
+        - Highlights valid target positions.
+        - Allows the player to choose an attack type and target.
+        - Executes the selected attack and applies its effects.
+        """
         if not valid_attacks:
             self.game_log.add_message(f"No valid targets for {unit.__class__.__name__}.", 'other')
             return
 
-        # Display attack options
-        self.game_log.add_message("Choose your action:", 'attack')
+        # Display available attack options
+        self.game_log.add_message(f"Choose an action for {unit.__class__.__name__}:", 'attack')
         attack_options = {}
         for i, (action_name, (method, targets)) in enumerate(valid_attacks.items(), start=1):
-            # Extract positions of the valid targets
-            attack_options[i] = (method, [(target.x, target.y) for target in targets])
+            attack_options[i] = (action_name, method, targets)
             self.game_log.add_message(f"{i}: {action_name}", 'attack')
 
         self.game_log.draw()
         pygame.display.flip()
 
-        # Let the player choose an action
+        # Wait for the player to choose an attack
         chosen_action = None
         while chosen_action is None:
             for event in pygame.event.get():
@@ -419,10 +440,13 @@ class Game:
                     if action_index in attack_options:
                         chosen_action = attack_options[action_index]
 
-        action_method, valid_cells = chosen_action
+        action_name, action_method, valid_targets = chosen_action
+        valid_cells = [(target.x, target.y) for target in valid_targets]
+
+        # Highlight valid target cells
         self.draw_highlighted_cells(valid_cells)
 
-        # Let the player select a target
+        # Wait for the player to select a target
         target_chosen = False
         while not target_chosen:
             for event in pygame.event.get():
@@ -433,37 +457,36 @@ class Game:
                     mouse_x, mouse_y = pygame.mouse.get_pos()
                     target_x, target_y = mouse_x // GC.CELL_SIZE, mouse_y // GC.CELL_SIZE
 
-                    # Check if the clicked cell matches any valid target position
-                    for target in all_units:  # Validate against all units
-                        if (target.x, target.y) == (target_x, target_y) and (target_x, target_y) in valid_cells:
-                            # Check for a headshot in the action method
-                            if hasattr(action_method, '__name__') and action_method.__name__ == "normal_arrow":
-                                import random
-                                headshot_probability = 1  # 4% chance of headshot
-                                if random.random() < headshot_probability:
-                                    target.health = 0  # Instant kill
-                                    self.game_log.add_message(f"Headshot ! {target.__class__.__name__} a été éliminé d'un seul coup !", 'action')
-                                else:
-                                    action_method(target)  # Normal attack
+                    # Check if the selected cell matches any valid target
+                    for target in valid_targets:
+                        if (target.x, target.y) == (target_x, target_y):
+                            # Handle special cases like "stomp" for the Giant
+                            if hasattr(unit, 'stomp') and action_method == unit.stomp:
+                                action_method(target, all_units, self.tile_map, self)
                             else:
-                                action_method(target)  # Perform the selected action (non-arrow actions)
+                                action_method(target)  # Standard attacks (e.g., punch, arrow)
 
                             # Check if the target is dead
                             if target.health <= 0:
-                                self.game_log.add_message(f"{target.__class__.__name__} est mort !", 'dead')
+                                self.game_log.add_message(f"{target.__class__.__name__} has been defeated!", 'dead')
                                 if target in self.player_units_p1:
                                     self.player_units_p1.remove(target)
                                 elif target in self.player_units_p2:
                                     self.player_units_p2.remove(target)
-                                    
-                            target_chosen = True
+
+                            # Log the action and end the target selection
                             self.game_log.add_message(
-                                f"{unit.__class__.__name__} performed {action_method.__name__} on {target.__class__.__name__}.",
+                                f"{unit.__class__.__name__} used {action_name} on {target.__class__.__name__}.",
                                 'attack'
                             )
+                            target_chosen = True
+
+                            # Redraw the game state and update the display
                             self.redraw_static_elements()
                             self.flip_display()
                             return
+
+
 
     def handle_player_turn(self, player_name, opponent_units, ally_units):
         """Handle the player's turn, including movement and attacks."""
