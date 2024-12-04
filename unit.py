@@ -213,31 +213,100 @@ class Bomber(Unit):
     def throw_bomb(self, target, all_units, tile_map, game_instance):
         """
         Throws a bomb at the specified target, dealing AoE damage to all units within range.
-        Uses the game_instance to log messages.
+        Applies knockback to all affected units.
         """
         affected_units = []  # List to store all units affected by the bomb
 
-        # Identify units within the bomb's AoE
+        # Identify units within the bomb's AoE (Manhattan distance)
         for unit in all_units:
             # Calculate Manhattan distance between the bomb target and the unit
             distance = abs(unit.x - target.x) + abs(unit.y - target.y)
+
             if distance <= self.bomb_range:  # Check if the unit is within AoE
                 affected_units.append(unit)
 
-        # Apply AoE damage to all affected units
+        # Apply AoE damage to all affected units, including the Bomber
         for unit in affected_units:
-            # Apply damage
-            damage = self.attack  # Ensure `self.attack` is an integer
+            # Apply the damage based on the Bomber's attack power
+            damage = self.attack_power  # Ensure `self.attack_power` is an integer
             unit.health -= damage
-            game_instance.game_log.add_message(
-                f"Bomber dealt {damage} damage to {unit.__class__.__name__} at ({unit.x}, {unit.y}).", 'attack'
-            )
 
             # Check if the unit's health drops to 0 or below
             if unit.health <= 0:
+                # We can log the death of the unit but not the knockback
                 game_instance.game_log.add_message(
                     f"{unit.__class__.__name__} at ({unit.x}, {unit.y}) has been defeated!", 'dead'
                 )
 
+            # Apply knockback effect (without logging)
+            self.apply_knockback(unit, target, game_instance)
+
         # Ensure game_log is drawn after all updates
         game_instance.game_log.draw()
+
+    def apply_knockback(self, unit, target, game_instance):
+        """
+        Applies knockback to the unit.
+        - If it's the target (B), knockback happens in a random direction.
+        - Otherwise, knockback happens away from the source (the Bomber).
+        """
+        # If the unit is the target (B), apply random knockback
+        if unit == target:
+            self.knockback_random(unit, game_instance)  # Ensure this method exists
+        else:
+            # Apply knockback away from the Bomber
+            self.knockback_away_from_source(unit, game_instance)
+
+    def knockback_random(self, unit, game_instance):
+        """
+        Apply random knockback to the target unit (B).
+        This will avoid occupied tiles (including the Bomber's own tile).
+        """
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # up, down, left, right
+        random.shuffle(directions)  # Randomize the order of directions
+
+        for dx, dy in directions:
+            new_x = unit.x + dx
+            new_y = unit.y + dy
+
+            # Check if the new position is within bounds, walkable, and unoccupied
+            if 0 <= new_x < GC.GRID_SIZE and 0 <= new_y < GC.GRID_SIZE:
+                # Ensure that the new position is not occupied by any other unit
+                if game_instance.tile_map.is_walkable(new_x, new_y, unit) and not self.is_occupied(new_x, new_y, game_instance):
+                    # If walkable and unoccupied, move the unit
+                    unit.x = new_x
+                    unit.y = new_y
+                    break  # Stop after the first valid knockback direction
+
+    def knockback_away_from_source(self, unit, game_instance):
+        """
+        Apply knockback to the unit away from the source (Bomber).
+        This ensures the Bomber gets knocked back if it is affected.
+        """
+        # Calculate direction away from the bomber (source)
+        dx = unit.x - self.x  # Difference in x
+        dy = unit.y - self.y  # Difference in y
+
+        # Normalize direction to get a unit vector
+        if dx != 0:
+            dx = int(dx / abs(dx))  # Normalize x direction
+        if dy != 0:
+            dy = int(dy / abs(dy))  # Normalize y direction
+
+        # Calculate the new position
+        new_x = unit.x + dx
+        new_y = unit.y + dy
+
+        # Check if the new position is within bounds and walkable
+        if 0 <= new_x < GC.GRID_SIZE and 0 <= new_y < GC.GRID_SIZE and game_instance.tile_map.is_walkable(new_x, new_y, unit):
+            unit.x = new_x
+            unit.y = new_y
+
+    def is_occupied(self, x, y, game_instance):
+        """
+        Check if the tile at (x, y) is occupied by any unit.
+        """
+        for unit in game_instance.player_units_p1 + game_instance.player_units_p2:
+            if unit.x == x and unit.y == y:
+                return True  # The tile is occupied
+        return False  # The tile is not occupied

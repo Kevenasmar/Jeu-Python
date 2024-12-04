@@ -322,6 +322,7 @@ class Game:
     def handle_attack_for_bomber(self, bomber, opponent_units):
         """
         Handles the Bomber's attack logic, allowing bombs to hit all units within range.
+        Applies knockback to the target in a random direction and to other affected units away from the Bomber.
         """
         # Calculate valid targets within the Bomber's attack range
         valid_targets = self.calculate_valid_attack_cells(bomber, bomber.bomb_range, opponent_units)
@@ -348,26 +349,29 @@ class Game:
                     mouse_x, mouse_y = pygame.mouse.get_pos()
                     target_x, target_y = mouse_x // GC.CELL_SIZE, mouse_y // GC.CELL_SIZE
                     if (target_x, target_y) in valid_cells:
-                        # Handle bomb throwing based on the occurrence of valid targets
-                        affected_targets = [
-                            target for target in valid_targets if (target.x, target.y) == (target_x, target_y)
-                        ]
+                        # The target unit (unit B) is selected
+                        selected_target = valid_targets[valid_cells.index((target_x, target_y))]
 
-                        if affected_targets:
-                            bomber.throw_bomb(
-                                target=affected_targets[0],
-                                all_units=self.player_units_p1 + self.player_units_p2,
-                                tile_map=self.tile_map,
-                                game_instance=self  # Pass the Game instance for logging
-                            )
-                            self.game_log.add_message(
-                                f"Bomber threw a bomb at ({target_x}, {target_y})!", 'attack'
-                            )
-                            target_chosen = True
+                        # Call the throw_bomb method with the chosen target
+                        bomber.throw_bomb(
+                            target=selected_target,
+                            all_units=self.player_units_p1 + self.player_units_p2,
+                            tile_map=self.tile_map,
+                            game_instance=self  # Pass the Game instance for logging
+                        )
+
+                        # Create the message with the list of affected units
+                        affected_units_names = [unit.__class__.__name__ for unit in valid_targets]
+                        affected_units_str = ", ".join(affected_units_names)
+
+                        self.game_log.add_message(
+                            f"Bomber threw a bomb and hit {affected_units_str}.", 'attack'
+                        )
+                        target_chosen = True
 
 
 
-
+    
     def handle_attack_for_mage(self, mage, ally_units, opponent_units):
         valid_attacks = {}
 
