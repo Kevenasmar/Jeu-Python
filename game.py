@@ -9,7 +9,7 @@ from World_Drawer import *
 from world import*
 from GameLog import * # type: ignore
 from menu import *  # Import menu functions
-
+from collectible_items import *
 # Setup tiles
 tiles_kind = [
     SandTile(),  # False veut dire que la case n'est pas solide tu peux marcher
@@ -51,7 +51,11 @@ class Game:
         self.walkable_tiles = self.initisialize_walkable_tiles()
         #Call spawn_units after initializing player_units
         self.spawn_units()
+        # gestionnaires de spawn 
+        self.item_manager = ItemSpawnManager(GC.WORLD_X, GC.WORLD_Y, tile_map,self.game_log)
 
+        # Liste des items actifs
+        self.active_items = []
     '''--------Making sure that the units doesn't spawn on non walkable tiles------------''' 
     def initisialize_walkable_tiles(self) :
         set_walkable_tiles = set () 
@@ -118,6 +122,41 @@ class Game:
 
     '''-----------------END OF THIS PART ---------------------------'''
     
+    #-----------------------Item Spawn------------------------------#
+    def update_items(self):
+        """Met à jour l'état des items"""
+        for item in self.active_items:
+            item.update_state()
+            # Vérifier les collisions avec les unités
+            for unit in self.player_units_p1 + self.player_units_p2:
+                if item.collect(unit):
+                    break
+    
+    def spawn_new_items(self):
+        """Génère de nouveaux items si nécessaire"""
+        # Exemple d'effets
+        heal_effect = Effect(100, 20, 0, "heal")
+        speed_effect = Effect(200, 2, 0, "Speed_Buff")
+        power_effect = Effect(150, 10, 0, "Power_Buff")
+        
+        # Tenter de spawner différents types d'items
+        effects = [heal_effect, speed_effect, power_effect]
+        for effect in effects:
+            item = self.item_manager.spawn_item(
+                lambda x, y: Collectible_items(
+                    x, y,
+                    "item_type",
+                    "images/item.png",
+                    "sounds/collect.wav",
+                    0, 1000, True,
+                    effect
+                )
+            )
+            if item:
+                self.active_items.append(item)
+    #------------Item spawned------------------#
+
+
     '''Utilities, display and movement'''
     def calculate_valid_cells(self, unit):
         """Calculate accessible cells for a unit, excluding cells occupied by other units within its speed range."""
@@ -627,23 +666,25 @@ def main():
     pygame.display.set_caption("L'Ascension des Héros")
 
     # Display the menu
-    from menu import main_menu, rules_screen  # Import menu functions
-    action = main_menu(screen)  # Show the main menu
-    if action == "play":
-        # Show the rules screen
-        p1_images = [
-            pygame.image.load('Photos/archer.png'),
-            pygame.image.load('Photos/mage.png'),
-            pygame.image.load('Photos/giant.png'),
-        ]
-        p2_images = [
-            pygame.image.load('Photos/enemy_archer.png'),
-            pygame.image.load('Photos/enemy_mage.png'),
-            pygame.image.load('Photos/enemy_giant.png'),
-        ]
-        for i in range(len(p1_images)):
-            p1_images[i] = pygame.transform.scale(p1_images[i], (50, 50))
-            p2_images[i] = pygame.transform.scale(p2_images[i], (50, 50))
+    Display_menu = False
+    if Display_menu: 
+        from menu import main_menu, rules_screen  # Import menu functions
+        action = main_menu(screen)  # Show the main menu
+        if action == "play":
+            # Show the rules screen
+            p1_images = [
+                pygame.image.load('Photos/archer.png'),
+                pygame.image.load('Photos/mage.png'),
+                pygame.image.load('Photos/giant.png'),
+            ]
+            p2_images = [
+                pygame.image.load('Photos/enemy_archer.png'),
+                pygame.image.load('Photos/enemy_mage.png'),
+                pygame.image.load('Photos/enemy_giant.png'),
+            ]
+            for i in range(len(p1_images)):
+                p1_images[i] = pygame.transform.scale(p1_images[i], (50, 50))
+                p2_images[i] = pygame.transform.scale(p2_images[i], (50, 50))
 
         rules_screen(screen, p1_images, p2_images)
 
@@ -669,7 +710,9 @@ def main():
         game.handle_player_turn("Player 2", game.player_units_p1, game.player_units_p2)
         if game.check_game_over():
             break
-
+        
+        game.update_items()
+        game.spawn_new_items()
         pygame.display.flip()  # Update the display once per cycle
         clock.tick(60)
 
