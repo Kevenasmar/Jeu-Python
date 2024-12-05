@@ -88,9 +88,6 @@ class Unit:
         pygame.draw.rect(screen, GC.GREEN, (bar_x, green_bar_y, bar_width, current_health_height))
 
 
-
-
-
 '''--------------------------Les Différents Types d'unité et leurs Compétences-----------------------------------'''
 '''Chaque unité a deux compétences propres a elle. Chaque compétence a une portée.'''
 
