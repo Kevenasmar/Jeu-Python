@@ -155,36 +155,81 @@ class Giant(Unit):
     def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
         super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
         self.punch_range = 1
-        self.stomp_range = 2 
+        self.stomp_range = 2
         self.ranges = [self.punch_range, self.stomp_range]
 
     def punch(self, target):
-        """Inflige des dégâts importants à la cible."""
-        target.health -= self.attack_power * 2  # Dégâts élevés
+        """
+        Punch ability:
+        - Deals heavy damage to the target.
+        """
+        target.health -= self.attack_power * 2  # High damage
+        if target.health < 0:
+            target.health = 0  # Prevent health from going negative
 
-    def stomp(self, target):
-        """Inflige des dégâts très importants et repousse la cible d'une case."""
-        target.health -= self.attack_power * 3  # Dégâts très élevés
+    def stomp(self, target, all_units, tile_map, game_instance):
+        """
+        Executes the stomp ability:
+        - Deals full damage to the primary target (red tile).
+        - Deals 50% damage to enemies on secondary tiles (yellow tiles).
+        - Knocks all affected units back away from the Giant.
+        """
+        primary_damage = self.attack_power * 3  # Full damage
+        secondary_damage = primary_damage // 2  # 50% damage
 
-        # Déterminer la direction du recul
-        dx = target.x - self.x
-        dy = target.y - self.y
+        # Apply full damage and knockback to the primary target
+        target.health -= primary_damage
+        if target.health < 0:
+            target.health = 0
+        self.apply_knockback(target, (self.x, self.y), tile_map, game_instance)
 
-        # Normaliser la direction du recul
+        # Determine all secondary tiles (yellow tiles)
+        secondary_tiles = [
+            (target.x - 1, target.y - 1),  # Top-left
+            (target.x, target.y - 1),     # Top-center
+            (target.x + 1, target.y - 1), # Top-right
+            (target.x - 1, target.y),     # Left
+            (target.x + 1, target.y),     # Right
+            (target.x - 1, target.y + 1), # Bottom-left
+            (target.x, target.y + 1),     # Bottom-center
+            (target.x + 1, target.y + 1)  # Bottom-right
+        ]
+
+        # Apply damage and knockback to enemies in secondary tiles
+        for unit in all_units:
+            if (unit.x, unit.y) in secondary_tiles:
+                # Apply 50% damage
+                unit.health -= secondary_damage
+                if unit.health < 0:
+                    unit.health = 0
+
+                # Apply knockback to secondary units
+                self.apply_knockback(unit, (self.x, self.y), tile_map, game_instance)
+
+    def apply_knockback(self, unit, stomp_origin, tile_map, game_instance):
+        """
+        Knocks a unit away from the stomp origin.
+        If the resulting position is invalid, the unit doesn't move.
+        """
+        dx = unit.x - stomp_origin[0]
+        dy = unit.y - stomp_origin[1]
+
+        # Normalize direction to calculate knockback
         if dx != 0:
             dx = int(dx / abs(dx))
         if dy != 0:
             dy = int(dy / abs(dy))
 
-        # Appliquer le recul d'une case
-        new_x = target.x + dx
-        new_y = target.y + dy
+        # Calculate the new position for knockback
+        new_x = unit.x + dx
+        new_y = unit.y + dy
 
-        # S'assurer que la cible ne sort pas de la grille
-        if 0 <= new_x < GC.GRID_SIZE:
-            target.x = new_x
-        if 0 <= new_y < GC.GRID_SIZE:
-            target.y = new_y
+        # Validate the new position
+        if (0 <= new_x < GC.GRID_SIZE and 0 <= new_y < GC.GRID_SIZE and 
+                tile_map.is_walkable(new_x, new_y, unit) and not game_instance.is_occupied(new_x, new_y)):
+            unit.x = new_x
+            unit.y = new_y
+
 
 
 class Mage(Unit):
@@ -210,38 +255,106 @@ class Mage(Unit):
 class Bomber(Unit):
     def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
         super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
-        self.bomb_range = 3  # Range to throw bombs
-        self.bomb_aoe = 1    # Radius of bomb's area of effect
+        self.bomb_range = 2  # AoE radius for the bomb
+        self.ranges = [self.bomb_range]  # Bomb's attack range
 
-    def throw_bomb(self, target_x, target_y, all_units, tile_map):
+    def throw_bomb(self, target, all_units, tile_map, game_instance):
         """
-        Throws a bomb at the specified coordinates, dealing AoE damage and knocking back affected units.
+        Throws a bomb at the specified target, dealing AoE damage to all units within range.
+        Applies knockback to all affected units.
         """
-        affected_units = []  # Collect all units in the AoE
+        affected_units = []  # List to store all units affected by the bomb
+
+        # Identify units within the bomb's AoE (Manhattan distance)
         for unit in all_units:
-            # Calculate Manhattan distance from the target point
-            distance = abs(unit.x - target_x) + abs(unit.y - target_y)
-            if distance <= self.bomb_aoe:
+            # Calculate Manhattan distance between the bomb target and the unit
+            distance = abs(unit.x - target.x) + abs(unit.y - target.y)
+
+            if distance <= self.bomb_range:  # Check if the unit is within AoE
                 affected_units.append(unit)
 
-        # Apply damage and knockback to all affected units
+        # Apply AoE damage to all affected units, including the Bomber
         for unit in affected_units:
-            unit.take_damage(self.attack)  # Use Bomber's attack value for damage
-            print(f"Bomber dealt {self.attack} damage to {unit.__class__.__name__} at ({unit.x}, {unit.y}).")
+            # Apply the damage based on the Bomber's attack power
+            damage = self.attack_power  # Ensure `self.attack_power` is an integer
+            unit.health -= damage
 
-            # Calculate knockback direction (away from the bomb's center)
-            dx = unit.x - target_x
-            dy = unit.y - target_y
-            knockback_x = unit.x + (1 if dx > 0 else -1 if dx < 0 else 0)
-            knockback_y = unit.y + (1 if dy > 0 else -1 if dy < 0 else 0)
+            # Check if the unit's health drops to 0 or below
+            if unit.health <= 0:
+                # We can log the death of the unit but not the knockback
+                game_instance.game_log.add_message(
+                    f"{unit.__class__.__name__} at ({unit.x}, {unit.y}) has been defeated!", 'dead'
+                )
 
-            # Check if the knockback position is valid
-            if 0 <= knockback_x < tile_map.width and 0 <= knockback_y < tile_map.height:
-                if tile_map.is_walkable(knockback_x, knockback_y, None):
-                    unit.x, unit.y = knockback_x, knockback_y
-                    print(f"{unit.__class__.__name__} was knocked back to ({unit.x}, {unit.y}).")
-                else:
-                    print(f"{unit.__class__.__name__} couldn't be knocked back due to obstacle.")
-            else:
-                print(f"{unit.__class__.__name__} couldn't be knocked back due to boundary.")
+            # Apply knockback effect (without logging)
+            self.apply_knockback(unit, target, game_instance)
 
+        # Ensure game_log is drawn after all updates
+        game_instance.game_log.draw()
+
+    def apply_knockback(self, unit, target, game_instance):
+        """
+        Applies knockback to the unit.
+        - If it's the target (B), knockback happens in a random direction.
+        - Otherwise, knockback happens away from the source (the Bomber).
+        """
+        # If the unit is the target (B), apply random knockback
+        if unit == target:
+            self.knockback_random(unit, game_instance)  # Ensure this method exists
+        else:
+            # Apply knockback away from the Bomber
+            self.knockback_away_from_source(unit, game_instance)
+
+    def knockback_random(self, unit, game_instance):
+        """
+        Apply random knockback to the target unit (B).
+        This will avoid occupied tiles (including the Bomber's own tile).
+        """
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # up, down, left, right
+        random.shuffle(directions)  # Randomize the order of directions
+
+        for dx, dy in directions:
+            new_x = unit.x + dx
+            new_y = unit.y + dy
+
+            # Check if the new position is within bounds, walkable, and unoccupied
+            if 0 <= new_x < GC.GRID_SIZE and 0 <= new_y < GC.GRID_SIZE:
+                # Ensure that the new position is not occupied by any other unit
+                if game_instance.tile_map.is_walkable(new_x, new_y, unit) and not self.is_occupied(new_x, new_y, game_instance):
+                    # If walkable and unoccupied, move the unit
+                    unit.x = new_x
+                    unit.y = new_y
+                    break  # Stop after the first valid knockback direction
+
+    def knockback_away_from_source(self, unit, game_instance):
+        """
+        Apply knockback to the unit away from the source (Bomber).
+        This ensures the Bomber gets knocked back if it is affected.
+        """
+        # Calculate direction away from the bomber (source)
+        dx = unit.x - self.x  # Difference in x
+        dy = unit.y - self.y  # Difference in y
+
+        # Normalize direction to get a unit vector
+        if dx != 0:
+            dx = int(dx / abs(dx))  # Normalize x direction
+        if dy != 0:
+            dy = int(dy / abs(dy))  # Normalize y direction
+
+        # Calculate the new position
+        new_x = unit.x + dx
+        new_y = unit.y + dy
+
+        # Check if the new position is within bounds and walkable
+        if 0 <= new_x < GC.GRID_SIZE and 0 <= new_y < GC.GRID_SIZE and game_instance.tile_map.is_walkable(new_x, new_y, unit):
+            unit.x = new_x
+            unit.y = new_y
+
+    def is_occupied(self, x, y, game_instance):
+        """
+        Check if the tile at (x, y) is occupied by any unit.
+        """
+        for unit in game_instance.player_units_p1 + game_instance.player_units_p2:
+            if unit.x == x and unit.y == y:
+                return True  # The tile is occupied
+        return False  # The tile is not occupied
