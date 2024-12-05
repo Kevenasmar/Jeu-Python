@@ -40,11 +40,11 @@ class Game:
         ]
 
         self.tile_map = Map_Aleatoire(tile_map, TERRAIN_TILES, GC.CELL_SIZE)
-        self.walkable_tiles = self.initisialize_walkable_tiles()
+        self.walkable_tiles = self.inititialize_walkable_tiles()
         self.spawn_units()
 
     '''--------S'assurer que les unités n'apparaissent pas sur des cases non praticables.------------''' 
-    def initisialize_walkable_tiles(self) :
+    def inititialize_walkable_tiles(self) :
         set_walkable_tiles = set () 
         for x in range (GC.WORLD_X):
             for y in range (GC.WORLD_Y):
@@ -671,6 +671,7 @@ class Game:
         pygame.time.wait(3000)  # Pause for 3 seconds
         pygame.quit()
         exit()
+
 
     '''------------------Boucle Main-----------------------------------------------------------'''
 def main():
