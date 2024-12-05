@@ -506,7 +506,7 @@ class Game:
         self.game_log.add_message(f"{player_name}'s turn", 'other')
         
         # Applique les effets DoT (Damage Over Time) pour l'Archer 
-        for archer in filter(lambda unit: isinstance(unit, Archer), self.player_units_p1):
+        for archer in filter(lambda unit: isinstance(unit, Archer), self.player_units_p1 if player_name == "Player 1" else self.player_units_p2):
             archer.apply_dot()
        
         for selected_unit in (self.player_units_p1 if player_name == "Player 1" else self.player_units_p2):
