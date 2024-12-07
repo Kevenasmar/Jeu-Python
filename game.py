@@ -43,7 +43,7 @@ class Game:
         self.walkable_tiles = self.inititialize_walkable_tiles()
         self.spawn_units()
 
-    '''--------S'assurer que les unités n'apparaissent pas sur des cases non praticables.------------''' 
+    '''--------S'assurer que les unités n'apparaissent pas sur des cases non praticables------------''' 
     def inititialize_walkable_tiles(self) :
         set_walkable_tiles = set () 
         for x in range (GC.WORLD_X):
@@ -472,7 +472,7 @@ class Game:
                             # Vérifier un tir à la tête (Headshot) dans la méthode d'action
                             if hasattr(action_method, '__name__') and action_method.__name__ == "normal_arrow":
                                 import random
-                                headshot_probability = 1  # 4% de chance de Headshot
+                                headshot_probability = 0.05  # 4% de chance de Headshot
                                 if random.random() < headshot_probability:
                                     target.health = 0  # Mort instantanée
                                     self.game_log.add_message(f"Headshot ! {target.__class__.__name__} died in one shot! !", 'action')
@@ -674,6 +674,7 @@ class Game:
 
 
     '''------------------Boucle Main-----------------------------------------------------------'''
+    
 def main():
     pygame.init()
     # Musique de fond

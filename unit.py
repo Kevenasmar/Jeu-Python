@@ -109,9 +109,9 @@ class Archer(Unit):
 
     def fire_arrow(self, target):
         """Flèche en feu, applique des effets de dégâts sur la durée (Damage Over Time DoT)."""
-        initial_damage = self.attack_power // 2
-        dot_damage = self.attack_power // 4
-        target.health -= initial_damage
+        initial_damage = self.attack_power - target.defense
+        dot_damage = self.attack_power - target.defense
+        target.health -= initial_damage 
         self.dot_targets[target] = {'damage': dot_damage, 'turns': 3}
 
     def apply_dot(self):
@@ -290,7 +290,7 @@ class Bomber(Unit):
         return False 
 
     def explode(self, all_units):
-        """ Le Bomber se sacrifie est explose, causant des dégâts pour toutes les unités dans la portée d'attaque 
+        """ Le Bomber se sacrifie et explose, causant des dégâts pour toutes les unités dans la portée d'attaque 
         et meurt."""
         targets = []
         for unit in all_units:
