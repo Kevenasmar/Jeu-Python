@@ -106,6 +106,16 @@ class Game:
             unit.x, unit.y = location     
         self.game_log.draw()
 
+    
+        def is_occupied(self, x, y):
+            """
+            Checks if the given tile (x, y) is occupied by any unit.
+            Returns True if occupied, False otherwise.
+            """
+            for unit in self.player_units_p1 + self.player_units_p2:
+                if unit.x == x and unit.y == y:
+                    return True
+            return False
 
     '''------------------Utilitaires, affichage et déplacement-----------------------'''
   
@@ -185,60 +195,56 @@ class Game:
         self.game_log.draw()  # Dessiner le game log
         pygame.display.flip()  # Mettre à jour l'affichage 
     
-    def draw_highlighted_cells(self, valid_cells):
-        """Dessiner une bordure blanche externe autour du groupe de cases valides et remplir la case survolée en blanc."""
-        #Convertir la liste valid_cells en un ensemble pour accélérer la recherche des voisins.
-        valid_cells_set = set(valid_cells)
+    def draw_highlighted_cells(self, move_cells=None, direct_cells=None, secondary_cells=None, is_attack_phase=False):
+        """
+        Draw highlighted cells with distinct colors:
+        - Movement cells: White external borders.
+        - Direct attack cells: Red.
+        - Secondary affected cells: Yellow.
+        - Hovered cell: White for movement phase, Red for attack phase.
+        """
+        move_cells = move_cells or []
+        direct_cells = direct_cells or []
+        secondary_cells = secondary_cells or []
 
-        # Directions pour vérifier les voisins (haut, droite, bas, gauche)
-        directions = [
-            (0, -1),  # Haut
-            (1, 0),   # Droite
-            (0, 1),   # Bas
-            (-1, 0)   # Gauche
-        ]
-
-        # Effacer l'écran et redessiner la grille avant 
+        # Redraw the grid before adding highlights
         self.tile_map.draw(self.screen)
 
-        # Parcourir toutes les cases valides et dessiner des bordures externes.
-        for x, y in valid_cells:
-            for i, (dx, dy) in enumerate(directions):
-                neighbor = (x + dx, y + dy)
+        # Highlight movement cells (white borders)
+        for x, y in move_cells:
+            rect = pygame.Rect(x * GC.CELL_SIZE, y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE)
+            if (x, y - 1) not in move_cells:  # Top border
+                pygame.draw.line(self.screen, (255, 255, 255), rect.topleft, rect.topright, 2)
+            if (x + 1, y) not in move_cells:  # Right border
+                pygame.draw.line(self.screen, (255, 255, 255), rect.topright, rect.bottomright, 2)
+            if (x, y + 1) not in move_cells:  # Bottom border
+                pygame.draw.line(self.screen, (255, 255, 255), rect.bottomright, rect.bottomleft, 2)
+            if (x - 1, y) not in move_cells:  # Left border
+                pygame.draw.line(self.screen, (255, 255, 255), rect.bottomleft, rect.topleft, 2)
 
-                # Si le voisin n'est pas dans valid_cells, dessine la bordure  
-                if neighbor not in valid_cells_set:
-                    start_pos = (x * GC.CELL_SIZE, y * GC.CELL_SIZE)  # Haut-Gauche de la cellule
-                    end_pos = list(start_pos)  # Copie de start_pos
+        # Highlight direct attack cells (red)
+        for x, y in direct_cells:
+            rect = pygame.Rect(x * GC.CELL_SIZE, y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE)
+            pygame.draw.rect(self.screen, (255, 0, 0), rect, 2)  # Red border for attack cells
 
-                    # Ajuster les positions des lignes en fonction de la direction.
-                    if i == 0:  # Bord supérieur
-                        end_pos[0] += GC.CELL_SIZE
-                    elif i == 1:  # Bord Droit
-                        start_pos = (start_pos[0] + GC.CELL_SIZE, start_pos[1])
-                        end_pos = (start_pos[0], start_pos[1] + GC.CELL_SIZE)
-                    elif i == 2:  # Bord Inférieur
-                        start_pos = (start_pos[0], start_pos[1] + GC.CELL_SIZE)
-                        end_pos = (start_pos[0] + GC.CELL_SIZE, start_pos[1])
-                    elif i == 3:  # Bord Gauche
-                        end_pos[1] += GC.CELL_SIZE
+        # Highlight secondary affected cells (yellow)
+        for x, y in secondary_cells:
+            rect = pygame.Rect(x * GC.CELL_SIZE, y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE)
+            pygame.draw.rect(self.screen, (255, 255, 0), rect, 2)  # Yellow border for secondary cells
 
-                    # Dessine la ligne de bordure blanche
-                    pygame.draw.line(self.screen, (255,255,255), start_pos, end_pos, 2)
-
+        # Highlight hovered cell
         mouse_x, mouse_y = pygame.mouse.get_pos()
         hover_x, hover_y = mouse_x // GC.CELL_SIZE, mouse_y // GC.CELL_SIZE
-
-        # Si la case survolée est dans valid_cells, remplir la case de blanc 
-        if (hover_x, hover_y) in valid_cells_set:
+        hover_color = (255, 0, 0, 100) if is_attack_phase else (255, 255, 255, 100)
+        if (hover_x, hover_y) in move_cells + direct_cells + secondary_cells:
             rect = pygame.Rect(hover_x * GC.CELL_SIZE, hover_y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE)
-            pygame.draw.rect(self.screen, (255,255,255, 100), rect)  
+            pygame.draw.rect(self.screen, hover_color, rect)
 
-        # Redessine toutes les unités pour s'assurer qu'elles apparaissent au dessus de la case surlignée 
+        # Redraw units on top of highlighted cells
         for unit in self.player_units_p1 + self.player_units_p2:
             unit.draw(self.screen)
 
-        # Mise a jour de l'affichage
+        # Update the game log and display
         self.game_log.draw()
         pygame.display.update()
 
@@ -304,37 +310,24 @@ class Game:
      
     def handle_attack_for_giant(self, giant, opponent_units):
         valid_attacks = {}
+
+        # Check for punch targets
         if giant.punch_range:
-            valid_targets = self.calculate_valid_attack_cells(giant, giant.punch_range, opponent_units)         
+            valid_targets = self.calculate_valid_attack_cells(giant, giant.punch_range, opponent_units)
             if valid_targets:
                 valid_attacks["Punch"] = (giant.punch, valid_targets)
+
+        # Check for stomp targets
         if giant.stomp_range:
-            valid_targets = self.calculate_valid_attack_cells(giant, giant.stomp_range, opponent_units)         
+            valid_targets = self.calculate_valid_attack_cells(giant, giant.stomp_range, opponent_units)
             if valid_targets:
                 valid_attacks["Stomp"] = (giant.stomp, valid_targets)
 
         if not valid_attacks:
-            self.game_log.add_message("No enemies in range for Giant.", 'info')
-            return
-    
-        self.perform_attack(giant, valid_attacks, opponent_units)
-
-    def handle_attack_for_bomber(self, bomber, opponent_units):
-        valid_attacks = {}
-
-        if bomber.bomb_range:
-            valid_targets = self.calculate_valid_attack_cells(bomber, bomber.bomb_range, opponent_units)
-            if valid_targets:
-                valid_attacks["Throw Bomb"] = (bomber.throw_bomb, valid_targets)
-
-        if bomber.explode_range:
-            all_units = self.player_units_p1 + self.player_units_p2
-            valid_attacks["Explode"] = (bomber.explode, all_units) 
-
-        if not valid_attacks:
-            self.game_log.add_message("No valid actions for Bomber.", 'info')
+            self.game_log.add_message("No valid actions for Giant.", 'info')
             return
 
+        # Present options to the player
         self.game_log.add_message("Choose your action:", 'attack')
         attack_options = {}
         for i, (action_name, (method, targets)) in enumerate(valid_attacks.items(), start=1):
@@ -344,6 +337,7 @@ class Game:
         self.game_log.draw()
         pygame.display.flip()
 
+        # Let the player choose an action
         chosen_action = None
         while chosen_action is None:
             for event in pygame.event.get():
@@ -356,21 +350,102 @@ class Game:
                         chosen_action = attack_options[action_index]
 
         action_method, targets = chosen_action
+
+        # Handle the chosen action
+        valid_cells = [(unit.x, unit.y) for unit in targets]
+        self.draw_highlighted_cells(direct_cells=valid_cells, is_attack_phase=True)
+
+        # Execute the action
+        target_chosen = False
+        while not target_chosen:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_x, mouse_y = pygame.mouse.get_pos()
+                    target_x, target_y = mouse_x // GC.CELL_SIZE, mouse_y // GC.CELL_SIZE
+                    if (target_x, target_y) in valid_cells:
+                        selected_target = next(
+                            (target for target in targets if (target.x, target.y) == (target_x, target_y)), None
+                        )
+                        if selected_target:
+                            if action_method == giant.stomp:
+                                action_method(
+                                    target=selected_target,
+                                    all_units=self.player_units_p1 + self.player_units_p2,
+                                    tile_map=self.tile_map,
+                                    game_instance=self
+                                )
+                            else:
+                                action_method(selected_target)
+
+                            self.game_log.add_message(
+                                f"{giant.__class__.__name__} used {action_method.__name__} on {selected_target.__class__.__name__}.",
+                                'attack'
+                            )
+                            target_chosen = True
+
+        self.redraw_static_elements()
+        self.flip_display()
+
+    def handle_attack_for_bomber(self, bomber, opponent_units):
+        valid_attacks = {}
+
+        # Check for throw_bomb targets
+        if bomber.bomb_range:
+            valid_targets = self.calculate_valid_attack_cells(bomber, bomber.bomb_range, opponent_units)
+            if valid_targets:
+                valid_attacks["Throw Bomb"] = (bomber.throw_bomb, valid_targets)
+
+        # Add explode action (doesn't require valid targets)
+        if bomber.explode_range:
+            all_units = self.player_units_p1 + self.player_units_p2
+            valid_attacks["Explode"] = (bomber.explode, all_units)
+
+        if not valid_attacks:
+            self.game_log.add_message("No valid actions for Bomber.", 'info')
+            return
+
+        # Present options to the player
+        self.game_log.add_message("Choose your action:", 'attack')
+        attack_options = {}
+        for i, (action_name, (method, targets)) in enumerate(valid_attacks.items(), start=1):
+            attack_options[i] = (method, targets)
+            self.game_log.add_message(f"{i}: {action_name}", 'attack')
+
+        self.game_log.draw()
+        pygame.display.flip()
+
+        # Let the player choose an action
+        chosen_action = None
+        while chosen_action is None:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                if event.type == pygame.KEYDOWN and event.unicode.isdigit():
+                    action_index = int(event.unicode)
+                    if action_index in attack_options:
+                        chosen_action = attack_options[action_index]
+
+        action_method, targets = chosen_action
+
+        # Handle the chosen action
         if action_method == bomber.explode:
-            affected_units = action_method(targets) 
+            affected_units = action_method(targets, self)  # Execute explode
             affected_units_names = [unit.__class__.__name__ for unit in affected_units]
             self.game_log.add_message(
-                f"Bomber sacrificed himself & exploded! ", 'attack'
+                f"Bomber sacrificed itself & exploded, affecting: {', '.join(affected_units_names)}.", 'attack'
             )
-
-            # Enlever le Bomber du jeu après explosion 
+            # Remove the Bomber from the game
             if bomber in self.player_units_p1:
                 self.player_units_p1.remove(bomber)
             elif bomber in self.player_units_p2:
                 self.player_units_p2.remove(bomber)
-        else:           
+        else:  # Handle throw_bomb
             valid_cells = [(unit.x, unit.y) for unit in targets]
-            self.draw_highlighted_cells(valid_cells)
+            self.draw_highlighted_cells(direct_cells=valid_cells, is_attack_phase=True)
             self.game_log.add_message("Choose a target for the bomb.", 'attack')
             self.game_log.draw()
             pygame.display.flip()
@@ -392,11 +467,14 @@ class Game:
                                 tile_map=self.tile_map,
                                 game_instance=self
                             )
-                            affected_units = [unit.__class__.__name__ for unit in targets]
                             self.game_log.add_message(
-                                f"Bomber threw a bomb and hit: {', '.join(affected_units)}.", 'attack'
+                                f"Bomber threw a bomb at ({selected_target.x}, {selected_target.y}).", 'attack'
                             )
                             target_chosen = True
+
+        self.redraw_static_elements()
+        self.flip_display()
+
 
     def handle_attack_for_mage(self, mage, ally_units, opponent_units):
         valid_attacks = {}
@@ -419,28 +497,25 @@ class Game:
 
     def perform_attack(self, unit, valid_attacks, all_units):
         """
-        Cette fonction exécute une attaque pour une unité donnée. 
-        Elle affiche les options d'attaque valides, permet au joueur de choisir une action, 
-        et applique l'effet de l'attaque sur la cible sélectionnée. Elle met à jour l'état 
-        du jeu, y compris les unités affectées et le journal des événements.
+        This function executes an attack for a given unit. It displays available actions,
+        allows the player to choose an action, and applies the selected action to a target.
         """
-        
         if not valid_attacks:
             self.game_log.add_message(f"No valid targets for {unit.__class__.__name__}.", 'info')
             return
 
-        # Afficher les options d'attaque 
+        # Display available attack options
         self.game_log.add_message("Choose your action:", 'attack')
         attack_options = {}
         for i, (action_name, (method, targets)) in enumerate(valid_attacks.items(), start=1):
-            # Extraire les positions des cibles valides 
+            # Extract valid target positions
             attack_options[i] = (method, [(target.x, target.y) for target in targets])
             self.game_log.add_message(f"{i}: {action_name}", 'attack')
 
         self.game_log.draw()
         pygame.display.flip()
 
-        # Le joueur choisit une action
+        # Let the player choose an action
         chosen_action = None
         while chosen_action is None:
             for event in pygame.event.get():
@@ -453,9 +528,65 @@ class Game:
                         chosen_action = attack_options[action_index]
 
         action_method, valid_cells = chosen_action
-        self.draw_highlighted_cells(valid_cells)
 
-        # Le joueur sélectionne une cible
+        # Highlight the attack cells in red during the attack phase
+        self.draw_highlighted_cells(direct_cells=valid_cells, is_attack_phase=True)
+
+        # Handle Bomber-specific actions (e.g., explode or throw_bomb)
+        if isinstance(unit, Bomber) and action_method in [unit.throw_bomb, unit.explode]:
+            if action_method == unit.explode:
+                # Execute explode action
+                affected_units = action_method(all_units, self)
+                affected_units_names = [unit.__class__.__name__ for unit in affected_units]
+                self.game_log.add_message(
+                    f"Bomber sacrificed itself and exploded, affecting: {', '.join(affected_units_names)}.", 'attack'
+                )
+
+                # Remove the Bomber after explosion
+                if unit in self.player_units_p1:
+                    self.player_units_p1.remove(unit)
+                elif unit in self.player_units_p2:
+                    self.player_units_p2.remove(unit)
+
+                self.redraw_static_elements()
+                self.flip_display()
+                return
+            else:
+                # Handle throw_bomb action
+                self.game_log.add_message("Choose a target for the bomb.", 'attack')
+                self.game_log.draw()
+                pygame.display.flip()
+
+                target_chosen = False
+                while not target_chosen:
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            pygame.quit()
+                            exit()
+                        if event.type == pygame.MOUSEBUTTONDOWN:
+                            mouse_x, mouse_y = pygame.mouse.get_pos()
+                            target_x, target_y = mouse_x // GC.CELL_SIZE, mouse_y // GC.CELL_SIZE
+                            if (target_x, target_y) in valid_cells:
+                                selected_target = next(
+                                    (target for target in all_units if (target.x, target.y) == (target_x, target_y)), None
+                                )
+                                if selected_target:
+                                    action_method(
+                                        target=selected_target,
+                                        all_units=self.player_units_p1 + self.player_units_p2,
+                                        tile_map=self.tile_map,
+                                        game_instance=self
+                                    )
+                                    self.game_log.add_message(
+                                        f"Bomber threw a bomb at ({selected_target.x}, {selected_target.y}).", 'attack'
+                                    )
+                                    target_chosen = True
+
+                self.redraw_static_elements()
+                self.flip_display()
+                return
+
+        # Standard attack logic for other units
         target_chosen = False
         while not target_chosen:
             for event in pygame.event.get():
@@ -466,37 +597,24 @@ class Game:
                     mouse_x, mouse_y = pygame.mouse.get_pos()
                     target_x, target_y = mouse_x // GC.CELL_SIZE, mouse_y // GC.CELL_SIZE
 
-                    # Vérifier si la case cliquée correspond à une position cible valide
-                    for target in all_units:  # Valider par rapport à toutes les unités
+                    # Verify if the clicked cell corresponds to a valid target position
+                    for target in all_units:
                         if (target.x, target.y) == (target_x, target_y) and (target_x, target_y) in valid_cells:
-                            # Vérifier un tir à la tête (Headshot) dans la méthode d'action
-                            if hasattr(action_method, '__name__') and action_method.__name__ == "normal_arrow":
-                                import random
-                                headshot_probability = 0.05  # 4% de chance de Headshot
-                                if random.random() < headshot_probability:
-                                    target.health = 0  # Mort instantanée
-                                    self.game_log.add_message(f"Headshot ! {target.__class__.__name__} died in one shot! !", 'action')
-                                else:
-                                    action_method(target)  # Attaque normale
-                            else:
-                                action_method(target)  #Exécuter l'action sélectionnée (actions autres que les flèches)
+                            action_method(target)
 
-                            # Vérifier si la cible est morte 
+                            # Check if the target has died
                             if target.health <= 0:
-                                self.game_log.add_message(f"{target.__class__.__name__} est mort !", 'dead')
+                                self.game_log.add_message(f"{target.__class__.__name__} has died!", 'dead')
                                 if target in self.player_units_p1:
                                     self.player_units_p1.remove(target)
                                 elif target in self.player_units_p2:
                                     self.player_units_p2.remove(target)
-                                    
+
                             target_chosen = True
-                            self.game_log.add_message(
-                                f"{unit.__class__.__name__} performed {action_method.__name__} on {target.__class__.__name__}.",
-                                'attack'
-                            )
                             self.redraw_static_elements()
                             self.flip_display()
                             return
+
 
 
     '''----------------------------Logique de Jeu--------------------------------------'''

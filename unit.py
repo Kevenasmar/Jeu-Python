@@ -4,29 +4,7 @@ from constante import GameConstantes as GC
 
 class Unit:
     """
-    Classe pour représenter une unité.
-
-    ...
-    Attributs
-    ---------
-    x : int
-        La position x de l'unité sur la grille.
-    y : int
-        La position y de l'unité sur la grille.
-    health : int
-        La santé de l'unité.
-    attack_power : int
-        La puissance d'attaque de l'unité.
-    defense : int
-        La défense de l'unité.
-    speed : int
-        La vitesse de déplacement de l'unité.
-    image : Surface
-        L'image de l'unité.
-    team : str
-        L'équipe de l'unité ('player' ou 'enemy').
-    is_selected : bool
-        Si l'unité est sélectionnée ou non.
+    Base class for all units.
     """
 
     def __init__(self, x, y, health, attack_power, defense, speed, vision, image_path, team):
@@ -37,85 +15,85 @@ class Unit:
         self.defense = defense
         self.speed = speed
         self.vision = vision
-        self.image = pygame.image.load(image_path).convert_alpha()  # Chargement de l'image
-        self.image = pygame.transform.scale(self.image, (int( GC.CELL_SIZE), int( GC.CELL_SIZE)))  # Échelle de l'image
-        self.team = team  # 'player' ou 'enemy'
+        self.image = pygame.image.load(image_path).convert_alpha()
+        self.image = pygame.transform.scale(self.image, (int(GC.CELL_SIZE), int(GC.CELL_SIZE)))
+        self.team = team  # 'player' or 'enemy'
         self.is_selected = False
 
-
-    '''Méthodes'''
-
     def move(self, new_x, new_y):
-        """Déplace l'unité vers une nouvelle position dans son rayon de vitesse."""
+        """
+        Moves the unit to a new position if within movement range.
+        """
         distance = abs(new_x - self.x) + abs(new_y - self.y)
         if distance <= self.speed and 0 <= new_x < GC.GRID_SIZE and 0 <= new_y < GC.GRID_SIZE:
             self.x = new_x
             self.y = new_y
         else:
-            print(f"Invalid Movement : Target Cell ({new_x}, {new_y}) out of limits.")
+            print(f"Invalid Movement: Target Cell ({new_x}, {new_y}) out of limits.")
 
     def _in_range(self, target, attack_range):
-        """Vérifier si la cible est dans la portée d'attaque."""
+        """
+        Checks if the target is within the unit's attack range.
+        """
         return abs(self.x - target.x) <= attack_range and abs(self.y - target.y) <= attack_range
-    
-    def draw(self, screen):
-        """Affiche l'unité avec une bar de vie et son image."""
-        
-        # Dessiner un fond blanc si l'unité est sélectionnée
-        if self.is_selected:
-            pygame.draw.rect(screen, (255,255,255), 
-                            (self.x * GC.CELL_SIZE, self.y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE))
 
-        # Dessiner la bar de vie
+    def draw(self, screen):
+        """
+        Draws the unit and its health bar on the screen.
+        """
+        if self.is_selected:
+            pygame.draw.rect(screen, (255, 255, 255),
+                             (self.x * GC.CELL_SIZE, self.y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE))
+
         self.draw_healthbar(screen)
 
-        # Dessiner l'image de l'unité
         image_rect = self.image.get_rect()
         image_rect.center = (self.x * GC.CELL_SIZE + GC.CELL_SIZE // 2, self.y * GC.CELL_SIZE + GC.CELL_SIZE // 2)
         screen.blit(self.image, image_rect)
 
     def draw_healthbar(self, screen):
-        """Dessine une bar de vie verticale alignée sur la bordure droite de a cellule de l'unité."""
-        bar_width = 5 
-        bar_height = GC.CELL_SIZE  
-        bar_x = self.x * GC.CELL_SIZE + GC.CELL_SIZE - bar_width  
-        bar_y = self.y * GC.CELL_SIZE  
+        """
+        Draws the unit's health bar.
+        """
+        bar_width = 5
+        bar_height = GC.CELL_SIZE
+        bar_x = self.x * GC.CELL_SIZE + GC.CELL_SIZE - bar_width
+        bar_y = self.y * GC.CELL_SIZE
 
         pygame.draw.rect(screen, GC.RED, (bar_x, bar_y, bar_width, bar_height))
-        
-        current_health_height = max(0, bar_height * (self.health / 100))  
-        green_bar_y = bar_y + (bar_height - current_health_height)  
+
+        current_health_height = max(0, bar_height * (self.health / 100))
+        green_bar_y = bar_y + (bar_height - current_health_height)
         pygame.draw.rect(screen, GC.GREEN, (bar_x, green_bar_y, bar_width, current_health_height))
 
+    def is_occupied(self, x, y, game_instance):
+        """
+        Check if the tile at (x, y) is occupied by any unit.
+        """
+        for unit in game_instance.player_units_p1 + game_instance.player_units_p2:
+            if unit.x == x and unit.y == y:
+                return True
+        return False
 
-'''--------------------------Les Différents Types d'unité et leurs Compétences-----------------------------------'''
-'''Chaque unité a deux compétences propres a elle. Chaque compétence a une portée.'''
-
-
-'''L'Archer'''
 
 class Archer(Unit):
     def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
         super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
-        self.dot_targets = {}  # Suivre les unités affectées par la flèche en feu
-        #Portées d'attaque
+        self.dot_targets = {}
         self.normal_arrow_range = 3
         self.fire_arrow_range = 5
         self.ranges = [self.normal_arrow_range, self.fire_arrow_range]
 
     def normal_arrow(self, target):
-        """Flèche normale avec possibilité de mort instantanée. Le Headshot est géré dans le fichier game.py."""
         target.health -= self.attack_power
 
     def fire_arrow(self, target):
-        """Flèche en feu, applique des effets de dégâts sur la durée (Damage Over Time DoT)."""
         initial_damage = self.attack_power - target.defense
         dot_damage = self.attack_power - target.defense
-        target.health -= initial_damage 
+        target.health -= initial_damage
         self.dot_targets[target] = {'damage': dot_damage, 'turns': 3}
 
     def apply_dot(self):
-        """Applique le DoT sur les ennemis affectés."""
         for target, effect in list(self.dot_targets.items()):
             if effect['turns'] > 0:
                 target.health -= effect['damage']
@@ -124,45 +102,53 @@ class Archer(Unit):
                 del self.dot_targets[target]
 
 
-'''Le Géant'''
-
 class Giant(Unit):
     def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
         super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
         self.punch_range = 1
-        self.stomp_range = 2 
+        self.stomp_range = 2
         self.ranges = [self.punch_range, self.stomp_range]
 
     def punch(self, target):
-        """Inflige des dégâts importants à la cible."""
-        target.health -= self.attack_power * 2  # Dégâts élevés
+        target.health -= self.attack_power * 2
+        if target.health < 0:
+            target.health = 0
 
-    def stomp(self, target):
-        """Inflige des dégâts très importants et repousse la cible d'une case."""
-        target.health -= self.attack_power * 3  # Dégâts très élevés
+    def stomp(self, target, all_units, tile_map, game_instance):
+        primary_damage = self.attack_power * 3
+        secondary_damage = primary_damage // 2
 
-        # Déterminer la direction du recul
-        dx = target.x - self.x
-        dy = target.y - self.y
+        target.health -= primary_damage
+        if target.health < 0:
+            target.health = 0
+        self.apply_knockback(target, (self.x, self.y), tile_map, game_instance)
 
-        # Normaliser la direction du recul
+        secondary_tiles = [(target.x + dx, target.y + dy) for dx in [-1, 0, 1] for dy in [-1, 0, 1] if (dx, dy) != (0, 0)]
+
+        for unit in all_units:
+            if (unit.x, unit.y) in secondary_tiles:
+                unit.health -= secondary_damage
+                if unit.health < 0:
+                    unit.health = 0
+                self.apply_knockback(unit, (self.x, self.y), tile_map, game_instance)
+
+    def apply_knockback(self, unit, stomp_origin, tile_map, game_instance):
+        dx = unit.x - stomp_origin[0]
+        dy = unit.y - stomp_origin[1]
+
         if dx != 0:
             dx = int(dx / abs(dx))
         if dy != 0:
             dy = int(dy / abs(dy))
 
-        # Appliquer le recul d'une case
-        new_x = target.x + dx
-        new_y = target.y + dy
+        new_x = unit.x + dx
+        new_y = unit.y + dy
 
-        # S'assurer que la cible ne sorte pas de la grille
-        if 0 <= new_x < GC.GRID_SIZE:
-            target.x = new_x
-        if 0 <= new_y < GC.GRID_SIZE:
-            target.y = new_y
+        if (0 <= new_x < GC.GRID_SIZE and 0 <= new_y < GC.GRID_SIZE and 
+                tile_map.is_walkable(new_x, new_y, unit) and not self.is_occupied(new_x, new_y, game_instance)):
+            unit.x = new_x
+            unit.y = new_y
 
-
-'''Le Mage'''
 
 class Mage(Unit):
     def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
@@ -171,137 +157,89 @@ class Mage(Unit):
         self.heal_range = 1
         self.potion_range = 6
         self.ranges = [self.heal_range, self.potion_range]
-        
+
     def potion(self, target):
-        """Jette une potion magique"""
-        target.health -= self.attack_power  # Dégâts faibles
+        target.health -= self.attack_power
 
     def heal_allies(self, target):
-        """Soigne une unité alliée."""
-        if target.team == self.team:  # Only heal allies
+        if target.team == self.team:
             target.health += self.attack_power
-            target.health = min(target.health, 100)  # Cap health at 100
-        else:
-            print(f"Cannot heal {target.__class__.__name__}, they are not an ally!")
+            target.health = min(target.health, 100)
 
-
-'''Le Bomber'''
 
 class Bomber(Unit):
     def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
         super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
-        self.bomb_range = 2  
+        self.bomb_range = 2
         self.explode_range = 5
-        self.ranges = [self.bomb_range, self.explode_range]  
+        self.ranges = [self.bomb_range, self.explode_range]
 
     def throw_bomb(self, target, all_units, tile_map, game_instance):
-        """
-        Lance une bombe sur la cible spécifiée, infligeant des dégâts de zone (AoE) à toutes les unités dans la portée.
-        Applique un effet de recul à toutes les unités affectées.
-        """
-        affected_units = []  #Liste pour stocker toutes les unités affectées par la bombe
+        affected_units = []
+        aoe_cells = [(target.x, target.y)]
 
-        # Identifier les unités dans la portée de la bombe (Distance de Manhattan)
         for unit in all_units:
             distance = abs(unit.x - target.x) + abs(unit.y - target.y)
-
-            if distance <= self.bomb_range:  # S'assurer que la cible est dans la portée d'attaque
+            if distance <= self.bomb_range:
                 affected_units.append(unit)
+                if (unit.x, unit.y) != (target.x, target.y):
+                    aoe_cells.append((unit.x, unit.y))
 
-        # Appliquer les dégâts pour toutes les unités affectées, y compris le Bomber 
         for unit in affected_units:
-            # Appliquer le dégât 
-            damage = self.attack_power  
-            unit.health -= damage
-
-            # Vérifier si les points de vie de l'unité deviennent nuls
+            unit.health -= self.attack_power
             if unit.health <= 0:
-                game_instance.game_log.add_message(
-                    f"{unit.__class__.__name__} at ({unit.x}, {unit.y}) has been defeated!", 'dead'
-                )
-
-            # Appliquer l'effet de recul 
+                game_instance.game_log.add_message(f"{unit.__class__.__name__} was defeated!", 'dead')
             self.apply_knockback(unit, target, game_instance)
 
-        game_instance.game_log.draw()
+        game_instance.draw_highlighted_cells(
+            direct_cells=[(target.x, target.y)],
+            secondary_cells=[cell for cell in aoe_cells if cell != (target.x, target.y)],
+            is_attack_phase=True
+        )
+
+    def explode(self, all_units, game_instance):
+        affected_units = [unit for unit in all_units if abs(unit.x - self.x) + abs(unit.y - self.y) <= self.explode_range]
+
+        for unit in affected_units:
+            unit.health -= self.attack_power * 3
+            if unit.health <= 0:
+                game_instance.game_log.add_message(f"{unit.__class__.__name__} was defeated!", 'dead')
+
+        self.health = 0
+        if self in game_instance.player_units_p1:
+            game_instance.player_units_p1.remove(self)
+        elif self in game_instance.player_units_p2:
+            game_instance.player_units_p2.remove(self)
 
     def apply_knockback(self, unit, target, game_instance):
-        """
-        Applique un effet de recul à l'unité.
-        Si c'est la cible, le recul se fait dans une direction aléatoire.
-        Sinon, le recul s'éloigne de la source.
-        """
-        # Si l'unité est la cible, appliquer un effet de recul random 
         if unit == target:
-            self.knockback_random(unit, game_instance)  # Ensure this method exists
+            self.knockback_random(unit, game_instance)
         else:
-            # Appliquer un effet de recul loin du Bomber
             self.knockback_away_from_source(unit, game_instance)
 
     def knockback_random(self, unit, game_instance):
-        """
-        Appliquer un effet de recul aléatoire à l'unité cible.
-        Cela évitera les cases occupées (y compris celle du Bomber lui-même)
-        """
-        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Haut, bas, gauche, droite
-        random.shuffle(directions)  # Ordre de directions random
-
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        random.shuffle(directions)
         for dx, dy in directions:
             new_x = unit.x + dx
             new_y = unit.y + dy
-
-            # Vérifier si la nouvelle position est dans la limite de la grille, praticable et non-occupée
-            if 0 <= new_x < GC.GRID_SIZE and 0 <= new_y < GC.GRID_SIZE:
-                if game_instance.tile_map.is_walkable(new_x, new_y, unit) and not self.is_occupied(new_x, new_y, game_instance):
-                    unit.x = new_x
-                    unit.y = new_y
-                    break  
+            if (0 <= new_x < GC.GRID_SIZE and 0 <= new_y < GC.GRID_SIZE and 
+                    game_instance.tile_map.is_walkable(new_x, new_y, unit) and not self.is_occupied(new_x, new_y, game_instance)):
+                unit.x = new_x
+                unit.y = new_y
+                break
 
     def knockback_away_from_source(self, unit, game_instance):
-        """
-        Appliquer un effet de recul à l'unité, en s'éloignant de la source (Bomber).
-        Cela garantit que le Bomber subit également un recul s'il est affecté.
-        """
-        # Calculer la direction loin de la source 
-        dx = unit.x - self.x  # Différence en x
-        dy = unit.y - self.y  # Différence en y
-
-        # Normaliser la direction pour obtenir un vecteur unitaire.
+        dx = unit.x - self.x
+        dy = unit.y - self.y
         if dx != 0:
-            dx = int(dx / abs(dx))  # Direction x
+            dx = int(dx / abs(dx))
         if dy != 0:
-            dy = int(dy / abs(dy))  # Direction y
+            dy = int(dy / abs(dy))
 
-        # Calculer la nouvelle position
         new_x = unit.x + dx
         new_y = unit.y + dy
-
-        if 0 <= new_x < GC.GRID_SIZE and 0 <= new_y < GC.GRID_SIZE and game_instance.tile_map.is_walkable(new_x, new_y, unit):
+        if (0 <= new_x < GC.GRID_SIZE and 0 <= new_y < GC.GRID_SIZE and 
+                game_instance.tile_map.is_walkable(new_x, new_y, unit) and not self.is_occupied(new_x, new_y, game_instance)):
             unit.x = new_x
             unit.y = new_y
-
-    def is_occupied(self, x, y, game_instance):
-        """
-        Vérifier si la case (x,y) est occupée par une unité.
-        """
-        for unit in game_instance.player_units_p1 + game_instance.player_units_p2:
-            if unit.x == x and unit.y == y:
-                return True  # La case est occupée
-        return False 
-
-    def explode(self, all_units):
-        """ Le Bomber se sacrifie et explose, causant des dégâts pour toutes les unités dans la portée d'attaque 
-        et meurt."""
-        targets = []
-        for unit in all_units:
-            # Distance de Manhattan Bomber - Cible
-            distance = abs(unit.x - self.x) + abs(unit.y - self.y)
-            if distance <= self.explode_range:
-                targets.append(unit)
-                unit.health -= (self.attack_power*3 - unit.defense)  
-                if unit.health <= 0:
-                    unit.health = 0  
-
-        # Tuer le Bomber
-        self.health = 0
-        return targets  # Retourne la liste des unités affectées
