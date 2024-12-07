@@ -620,23 +620,23 @@ class Game:
     '''----------------------------Logique de Jeu--------------------------------------'''
 
     def handle_player_turn(self, player_name, opponent_units, ally_units):
-        '''Cette fonction gère le tour du joueur, inclus le mouvement et les attaques'''
+        """Gère le tour du joueur, incluant le mouvement et les attaques."""
         self.game_log.add_message(f"{player_name}'s turn", 'other')
-        
-        # Applique les effets DoT (Damage Over Time) pour l'Archer 
+
+        # Applique les effets DoT (Damage Over Time) pour l'Archer
         for archer in filter(lambda unit: isinstance(unit, Archer), self.player_units_p1 if player_name == "Player 1" else self.player_units_p2):
             archer.apply_dot()
-       
+
         for selected_unit in (self.player_units_p1 if player_name == "Player 1" else self.player_units_p2):
             if self.check_game_over():
                 return False
 
             selected_unit.is_selected = True
             self.redraw_static_elements()  # S'assurer que la grille est bien dessinée
-            self.flip_display()  
+            self.flip_display()
             has_acted = False
 
-            # Demander au joueur s'il veut bouger l'unité selectionnée 
+            # Phase de mouvement
             self.game_log.add_message(f"{selected_unit.__class__.__name__}'s turn. Move? (y/n)", 'mouvement')
             self.game_log.draw()
             pygame.display.flip()
@@ -652,14 +652,14 @@ class Game:
                             moving = True
                         elif event.key == pygame.K_n:
                             moving = False
-                            selected_unit.is_selected = False  
+                            selected_unit.is_selected = False
 
             if moving:
                 valid_cells = self.calculate_valid_cells(selected_unit)
                 self.draw_highlighted_cells(valid_cells)
 
                 while not has_acted:
-                    self.draw_highlighted_cells(valid_cells) 
+                    self.draw_highlighted_cells(valid_cells)
 
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT:
@@ -675,7 +675,7 @@ class Game:
                                 self.redraw_static_elements()
                                 self.flip_display()
 
-            # Logique d'Attaque
+            # Phase d'attaque
             valid_attacks = []
             los_blocked = False
             in_range = False
@@ -690,9 +690,9 @@ class Game:
                             los_blocked = True
 
             if in_range and not valid_attacks and los_blocked:
-                # Ennemi dans la "Range" mais pas dans la "Line of Sight" 
+                # Ennemi dans la "Range" mais pas dans la "Line of Sight"
                 self.game_log.add_message("Enemy in range but not in sight!", 'info')
-                selected_unit.is_selected = False  # Desélectionner l'unité
+                selected_unit.is_selected = False  # Désélectionner l'unité
                 self.flip_display()
                 continue
 
@@ -713,9 +713,32 @@ class Game:
                                 attacking = True
                             elif event.key == pygame.K_n:
                                 attacking = False
-                                selected_unit.is_selected = False  # Pas d'attaque
+                                selected_unit.is_selected = False
 
                 if attacking:
+                    self.game_log.add_message("Choose an action or skip (S) :", 'attack')
+                    self.game_log.draw()
+                    pygame.display.flip()
+
+                    skipping = None
+                    while skipping is None:
+                        for event in pygame.event.get():
+                            if event.type == pygame.QUIT:
+                                pygame.quit()
+                                exit()
+                            if event.type == pygame.KEYDOWN:
+                                if event.key == pygame.K_s:
+                                    # Skip attack phase
+                                    self.game_log.add_message("Attack skipped.", 'other')
+                                    skipping = True
+                                    selected_unit.is_selected = False  # Désélectionner l'unité
+                                elif event.key == pygame.K_y:
+                                    # Proceed to attack phase
+                                    skipping = False
+
+                    if skipping:
+                        continue  # Skip to the next unit
+
                     # Appeler la fonction d'attaque correspondante
                     if isinstance(selected_unit, Archer):
                         self.handle_attack_for_archer(selected_unit, opponent_units)
@@ -734,14 +757,14 @@ class Game:
             if not in_range and not valid_attacks:
                 # No range and no LoS
                 self.game_log.add_message("No enemies in range.", 'info')
-                selected_unit.is_selected = False  # Desélectionner l'unité
+                selected_unit.is_selected = False  # Désélectionner l'unité
                 self.flip_display()
                 continue
 
             if in_range and not valid_attacks:
                 # LoS but no range
                 self.game_log.add_message("Enemy in range but abilities are out of range.", 'info')
-                selected_unit.is_selected = False  # Desélectionner l'unité
+                selected_unit.is_selected = False  # Désélectionner l'unité
                 self.flip_display()
                 continue
 
