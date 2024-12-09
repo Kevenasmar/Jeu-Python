@@ -55,7 +55,7 @@ class Unit:
         self.team = team  # 'player' ou 'enemy'
         self.is_selected = False
 
-    def get_position(self, x, y) : 
+    def get_position(self) : 
         return (self.x, self.y)
 
     def move(self, new_x, new_y):
