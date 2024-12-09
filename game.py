@@ -298,10 +298,6 @@ class Game:
             if valid_targets:
                 valid_attacks["Fire Arrow"] = (archer.fire_arrow, valid_targets)
 
-
-        if not valid_attacks:
-            self.game_log.add_message("No enemies in range for Archer.", 'info')
-            return
         
         self.perform_attack(archer, valid_attacks, opponent_units)
      
@@ -315,10 +311,6 @@ class Game:
             valid_targets = self.calculate_valid_attack_cells(giant, giant.stomp_range, opponent_units)         
             if valid_targets:
                 valid_attacks["Stomp"] = (giant.stomp, valid_targets)
-
-        if not valid_attacks:
-            self.game_log.add_message("No enemies in range for Giant.", 'info')
-            return
     
         self.perform_attack(giant, valid_attacks, opponent_units)
 
@@ -334,9 +326,6 @@ class Game:
             all_units = self.player_units_p1 + self.player_units_p2
             valid_attacks["Explode"] = (bomber.explode, all_units) 
 
-        if not valid_attacks:
-            self.game_log.add_message("No valid actions for Bomber.", 'info')
-            return
 
         self.game_log.add_message("Choose your action:", 'attack')
         attack_options = {}
@@ -414,10 +403,6 @@ class Game:
             if valid_attack_targets:
                 valid_attacks["Potion"] = (mage.potion, valid_attack_targets)
 
-        if not valid_attacks:
-            self.game_log.add_message("No valid targets for Mage.", 'info')
-            return
-
         self.perform_attack(mage, valid_attacks, opponent_units + ally_units) 
 
     def perform_attack(self, unit, valid_attacks, all_units):
@@ -478,7 +463,7 @@ class Game:
                                 headshot_probability = 0.05  # 4% de chance de Headshot
                                 if random.random() < headshot_probability:
                                     target.health = 0  # Mort instantanée
-                                    self.game_log.add_message(f"Headshot ! {target.__class__.__name__} died in one shot! !", 'action')
+                                    self.game_log.add_message(f"Headshot ! {target.__class__.__name__} killed in one shot! !", 'action')
                                 else:
                                     action_method(target)  # Attaque normale
                             else:
@@ -486,7 +471,7 @@ class Game:
 
                             # Vérifier si la cible est morte 
                             if target.health <= 0:
-                                self.game_log.add_message(f"{target.__class__.__name__} est mort !", 'dead')
+                                self.game_log.add_message(f"{target.__class__.__name__} is dead !", 'dead')
                                 if target in self.player_units_p1:
                                     self.player_units_p1.remove(target)
                                 elif target in self.player_units_p2:
@@ -561,74 +546,73 @@ class Game:
                                 self.flip_display()
 
             # Logique d'Attaque
-            valid_attacks = []
-            los_blocked = False
-            in_range = False
-
+            valid_attacks = {}
             for opponent in opponent_units:
                 for attack_range in selected_unit.ranges:
                     if selected_unit._in_range(opponent, attack_range):
-                        in_range = True
                         if self.has_line_of_sight((selected_unit.x, selected_unit.y), (opponent.x, opponent.y)):
-                            valid_attacks.append(opponent)
-                        else:
-                            los_blocked = True
+                            if isinstance(selected_unit, Archer):
+                                valid_targets = self.calculate_valid_attack_cells(selected_unit, attack_range, opponent_units)
+                                if valid_targets:
+                                    valid_attacks["Normal Arrow"] = valid_targets
+                            elif isinstance(selected_unit, Giant):
+                                valid_targets = self.calculate_valid_attack_cells(selected_unit, attack_range, opponent_units)
+                                if valid_targets:
+                                    valid_attacks["Punch"] = valid_targets
+                            elif isinstance(selected_unit, Mage):
+                                valid_targets = self.calculate_valid_attack_cells(selected_unit, attack_range, opponent_units)
+                                if valid_targets:
+                                    valid_attacks["Potion"] = valid_targets
+                            elif isinstance(selected_unit, Bomber):
+                                valid_targets = self.calculate_valid_attack_cells(selected_unit, attack_range, opponent_units)
+                                if valid_targets:
+                                    valid_attacks["Throw Bomb"] = valid_targets
 
-            if in_range and not valid_attacks and los_blocked:
-                # Ennemi dans la "Range" mais pas dans la "Line of Sight" 
-                self.game_log.add_message("Enemy in range but not in sight!", 'info')
-                selected_unit.is_selected = False  # Desélectionner l'unité
+            # Skip attack phase if no valid attacks
+            if not valid_attacks:
+                if any(selected_unit._in_range(opponent, attack_range) for opponent in opponent_units for attack_range in selected_unit.ranges):
+                    self.game_log.add_message("Enemies in range but out of sight!", 'info')
+                else:
+                    self.game_log.add_message("No enemies in range.", 'info')
+                selected_unit.is_selected = False
                 self.flip_display()
                 continue
 
-            if valid_attacks:
-                # Ennemi dans la "Range" et dans la "Line of Sight"
-                self.game_log.add_message(f"{selected_unit.__class__.__name__}'s turn. Attack? (y/n)", 'attack')
-                self.game_log.draw()
-                pygame.display.flip()
+            # Ask if the player wants to attack
+            self.game_log.add_message(f"{selected_unit.__class__.__name__}'s turn. Attack? (y/n)", 'attack')
+            self.game_log.draw()
+            pygame.display.flip()
 
-                attacking = None
-                while attacking is None:
-                    for event in pygame.event.get():
-                        if event.type == pygame.QUIT:
-                            pygame.quit()
-                            exit()
-                        if event.type == pygame.KEYDOWN:
-                            if event.key == pygame.K_y:
-                                attacking = True
-                            elif event.key == pygame.K_n:
-                                attacking = False
-                                selected_unit.is_selected = False  # Pas d'attaque
+            attacking = None
+            while attacking is None:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        exit()
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_y:
+                            attacking = True
+                        elif event.key == pygame.K_n:
+                            attacking = False
+                            selected_unit.is_selected = False
 
-                if attacking:
-                    # Appeler la fonction d'attaque correspondante
-                    if isinstance(selected_unit, Archer):
-                        self.handle_attack_for_archer(selected_unit, opponent_units)
-                    elif isinstance(selected_unit, Giant):
-                        self.handle_attack_for_giant(selected_unit, opponent_units)
-                    elif isinstance(selected_unit, Mage):
-                        self.handle_attack_for_mage(selected_unit, ally_units, opponent_units)
-                    elif isinstance(selected_unit, Bomber):
-                        self.handle_attack_for_bomber(selected_unit, opponent_units)
+            if not attacking:
+                continue  # Skip to the next unit
 
-                    selected_unit.is_selected = False  # Fin du tour de l'unité
-                    self.redraw_static_elements()
-                    self.flip_display()
-                    continue
+            # Call the appropriate attack handler
+            if isinstance(selected_unit, Archer):
+                self.handle_attack_for_archer(selected_unit, opponent_units)
+            elif isinstance(selected_unit, Giant):
+                self.handle_attack_for_giant(selected_unit, opponent_units)
+            elif isinstance(selected_unit, Mage):
+                self.handle_attack_for_mage(selected_unit, ally_units, opponent_units)
+            elif isinstance(selected_unit, Bomber):
+                self.handle_attack_for_bomber(selected_unit, opponent_units)
 
-            if not in_range and not valid_attacks:
-                # No range and no LoS
-                self.game_log.add_message("No enemies in range.", 'info')
-                selected_unit.is_selected = False  # Desélectionner l'unité
-                self.flip_display()
-                continue
+            selected_unit.is_selected = False  # End unit's turn
+            self.redraw_static_elements()
+            self.flip_display()
 
-            if in_range and not valid_attacks:
-                # LoS but no range
-                self.game_log.add_message("Enemy in range but abilities are out of range.", 'info')
-                selected_unit.is_selected = False  # Desélectionner l'unité
-                self.flip_display()
-                continue
 
     def handle_enemy_turn(self):
         #Simple AI for the enemy's turn
