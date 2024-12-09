@@ -9,7 +9,7 @@ from World_Drawer import *
 from world import*
 from GameLog import * # type: ignore
 from menu import *  # Import menu functions
-
+from collectible_items import *
 # Setup tiles
 tiles_kind = [
     SandTile(),  # False veut dire que la case n'est pas solide tu peux marcher
@@ -23,7 +23,7 @@ class Game:
     def __init__(self, screen, tile_map):
         self.screen = screen
         self.game_log = GameLog(500, GC.HEIGHT, GC.WIDTH, 0, self.screen)
-
+        self.tile_map = Map_Aleatoire(tile_map, TERRAIN_TILES, GC.CELL_SIZE)
         self.player_units_p1 = [ 
            #(x, y, points de vie, statistique d'attaque, statistique de défense, vitesse, vision, image, équipe)
             Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/archer.png', 'player'),
@@ -32,16 +32,139 @@ class Game:
             Bomber(3, 0, 100, 7, 1, 4, 2, 'Photos/bomber.png', 'player')
         ] 
 
-        self.player_units_p2 = [ 
+        self.enemy_units = [
+            Archer(5, 6, 100, 5, 2, 2, 3, 'Photos/enemy_archer.png', 'enemy'),
+            Mage(6, 6, 100, 3, 1, 1, 2, 'Photos/enemy_mage.png', 'enemy'),
+            Giant(7, 6, 100, 10, 1, 1, 2, 'Photos/enemy_giant.png', 'enemy')
+        ]
+        
+        self.player_units_p2 = [
             Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/enemy_archer.png', 'enemy'),
             Mage(1, 0, 100, 3, 1, 4, 2, 'Photos/enemy_mage.png', 'enemy'),
             Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/enemy_giant.png', 'enemy'),
             Bomber(3, 0, 100, 7, 1, 4, 2, 'Photos/enemy_bomber.png', 'enemy')
         ]
-
-        self.tile_map = Map_Aleatoire(tile_map, TERRAIN_TILES, GC.CELL_SIZE)
-        self.walkable_tiles = self.inititialize_walkable_tiles()
+        # Initialize spawn for bomber units as well
         self.spawn_units()
+        
+        self.walkable_tiles = self.inititialize_walkable_tiles()
+        self.collectible_spawn_timer = 0
+        self.spawn_interval = 2  # Seconds between spawns
+        self.collectible_items = []
+        self.collectible_templates = self.initialize_collectibles(tile_map)
+
+    #-------------------Collectibles Logic------------#
+    def initialize_collectibles(self, tile_map):
+        self.collectible_items = []
+        self.collectible_spawn_timer = 0
+        self.spawn_interval = 2  # Seconds between spawns
+        
+        # Create effects
+        effects = {
+            "health": Effect("health", "soundeffects/apply_effect.wav"),
+            "speed": Effect("speed", "soundeffects/apply_effect.wav"),
+            "damage": Effect("damage", "soundeffects/apply_effect.wav")
+        }
+        
+        # Create and return collectible templates
+        return {
+            "speed": lambda: CollectibleItem(
+                effects["speed"],
+                'image/speed_potion.png',
+                "soundeffects/apply_effect.wav",
+                120,
+                tile_map,
+                self.game_log
+            )
+            }
+    """,
+            "health": lambda: CollectibleItem(
+                effects["health"],
+                'image/health_potion.png',
+                "soundeffects/apply_effect.wav",
+                120,
+                tile_map,
+                self.game_log
+            "damage": lambda: CollectibleItem(
+                effects["damage"],
+                'image/power_buff.png',
+                "soundeffects/apply_effect.wav",
+                120,
+                tile_map,
+                self.game_log
+            )"""
+
+    def spawn_collectible(self):
+        print("Spawning collectible...")
+        # Choose a random collectible type
+        collectible_type = random.choice(list(self.collectible_templates.keys()))
+        new_collectible = self.collectible_templates[collectible_type]()
+        # Find a valid spawn location
+        walkable_tiles = []
+        for x in range(GC.WORLD_X):
+            for y in range(GC.WORLD_Y):
+                if self.tile_map.is_walkable(x, y):
+                    # Check if location is not too close to any player
+                    too_close = False
+                    for unit in self.player_units_p1 + self.player_units_p2:
+                        if abs(unit.x - x * GC.CELL_SIZE) < GC.CELL_SIZE * 3 and \
+                        abs(unit.y - y * GC.CELL_SIZE) < GC.CELL_SIZE * 3:
+                            too_close = True
+                            break
+                    if not too_close:
+                        walkable_tiles.append((x, y))
+        print(f"Found {len(walkable_tiles)} walkable tiles.")
+        if walkable_tiles:
+            spawn_x, spawn_y = random.choice(walkable_tiles)
+            new_collectible.x = spawn_x 
+            new_collectible.y = spawn_y 
+            self.collectible_items.append(new_collectible)
+            self.game_log.add_message("Collectible spawned", 'other')
+            print("Collectible are spawned at", spawn_x, spawn_y)
+        else : 
+            print('No walkable tile found for collectible!')
+        
+    def update_collectibles(self, delta_time):
+        # Update spawn timer
+        self.collectible_spawn_timer += delta_time
+        if self.collectible_spawn_timer >= self.spawn_interval:
+            self.spawn_collectible()
+            self.collectible_spawn_timer = 0
+        
+        # Update and check collection for existing collectibles
+        for item in self.collectible_items[:]:  # Use slice to safely modify list while iterating
+            if item.is_active:
+                for unit in self.player_units_p1 + self.player_units_p2:
+                    item.collect(unit)
+                    if not item.is_active:  # If item was collected
+                        self.collectible_items.remove(item)  # Remove it from the list
+                        break
+    """"def update_collectibles(self, delta_time):
+        # Update spawn timer
+        self.collectible_spawn_timer += delta_time
+        #Spawn new collectible if timer exceeds interval
+        if self.collectible_spawn_timer >= self.spawn_interval:
+            self.spawn_collectible()
+            self.collectible_spawn_timer = 0  # Reset timer
+
+        
+        # Update existing collectibles
+        for item in self.collectible_items[:]:  # Create a copy of the list to modify it safely
+            item.update(delta_time)
+            # Check collection for all units
+            for unit in self.player_units_p1 + self.player_units_p2:
+                item.collect(unit)
+            
+            # Remove inactive items that have exceeded their respawn time
+            if not item.is_active and item.respawn_counter >= item.respawn_time:
+                self.collectible_items.remove(item)
+"""
+    def draw_collectibles(self):
+        for item in self.collectible_items:
+            if item.is_active:
+                self.screen.blit(item.image, (item.x * GC.CELL_SIZE, item.y * GC.CELL_SIZE))
+
+    #----------End of this part----------------------#            
 
     '''--------S'assurer que les unités n'apparaissent pas sur des cases non praticables------------''' 
     def inititialize_walkable_tiles(self) :
@@ -51,7 +174,7 @@ class Game:
                 if any(self.tile_map.is_walkable(x, y, unit) for unit in self.player_units_p1 + self.player_units_p1 ):
                     set_walkable_tiles.add((x, y))
         return set_walkable_tiles
-    
+
     '''Ici, on gère l'apparition des unités sur la map en début de jeu'''
     def get_spawn_sector_p1(self) :
         sector_width = GC.WORLD_X // 3 
@@ -106,6 +229,17 @@ class Game:
             unit.x, unit.y = location     
         self.game_log.draw()
 
+    '''-----------------END OF THIS PART ---------------------------'''
+    def is_occupied(self, x, y):
+        """
+        Checks if a tile is occupied by any unit.
+        """
+        for unit in self.player_units_p1 + self.player_units_p2:
+            if unit.x == x and unit.y == y:
+                return True
+        return False
+
+    '''Utilities, display and movement'''
 
     '''------------------Utilitaires, affichage et déplacement-----------------------'''
   
@@ -155,7 +289,7 @@ class Game:
                 err -= dy
                 x0 += sx
             if e2 < dx:
-                err += dx
+                err += dx   
                 y0 += sy
 
     def redraw_static_elements(self):
@@ -166,6 +300,8 @@ class Game:
         for x in range(0, GC.WIDTH, GC.CELL_SIZE):
             for y in range(0, GC.HEIGHT, GC.CELL_SIZE):
                 rect = pygame.Rect(x, y, GC.CELL_SIZE, GC.CELL_SIZE)
+        
+        self.draw_collectibles()
         self.game_log.draw()
         pygame.display.flip()  # Mise a jour
     
@@ -178,6 +314,8 @@ class Game:
         if hasattr(self, 'valid_cells') and self.valid_cells:  # S'assurer que valid_cells soit bien définie
             self.draw_highlighted_cells(self.valid_cells)
 
+        self.draw_collectibles()
+
         # Dessiner toutes les unités avec leurs bars de vie 
         for unit in self.player_units_p1 + self.player_units_p2:
             unit.draw(self.screen)
@@ -189,7 +327,7 @@ class Game:
         """Dessiner une bordure blanche externe autour du groupe de cases valides et remplir la case survolée en blanc."""
         #Convertir la liste valid_cells en un ensemble pour accélérer la recherche des voisins.
         valid_cells_set = set(valid_cells)
-
+        
         # Directions pour vérifier les voisins (haut, droite, bas, gauche)
         directions = [
             (0, -1),  # Haut
@@ -200,7 +338,7 @@ class Game:
 
         # Effacer l'écran et redessiner la grille avant 
         self.tile_map.draw(self.screen)
-
+        self.draw_collectibles()
         # Parcourir toutes les cases valides et dessiner des bordures externes.
         for x, y in valid_cells:
             for i, (dx, dy) in enumerate(directions):
@@ -241,6 +379,7 @@ class Game:
         # Mise a jour de l'affichage
         self.game_log.draw()
         pygame.display.update()
+
 
 
     '''--------------------------------------Attaques-----------------------------------------'''
@@ -303,21 +442,43 @@ class Game:
         self.perform_attack(archer, valid_attacks, opponent_units)
      
     def handle_attack_for_giant(self, giant, opponent_units):
+        """
+        Handles the Giant's attack logic, including Punch and Stomp.
+        Highlights:
+        - Punch: Direct target cells only.
+        - Stomp: Direct cells in red and secondary affected cells in yellow.
+        """
         valid_attacks = {}
+
+        # Punch attack
         if giant.punch_range:
-            valid_targets = self.calculate_valid_attack_cells(giant, giant.punch_range, opponent_units)         
+            valid_targets = self.calculate_valid_attack_cells(giant, giant.punch_range, opponent_units)
             if valid_targets:
                 valid_attacks["Punch"] = (giant.punch, valid_targets)
+
+        # Stomp attack
         if giant.stomp_range:
-            valid_targets = self.calculate_valid_attack_cells(giant, giant.stomp_range, opponent_units)         
+            valid_targets = self.calculate_valid_attack_cells(giant, giant.stomp_range, opponent_units)
             if valid_targets:
+                # Highlight stomp cells
+                direct_cells = [(target.x, target.y) for target in valid_targets]
+                secondary_cells = [
+                    (target.x + dx, target.y + dy)
+                    for target in valid_targets
+                    for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Surrounding cells
+                ]
+                self.draw_highlighted_cells(direct_cells=direct_cells, secondary_cells=secondary_cells)
+
                 valid_attacks["Stomp"] = (giant.stomp, valid_targets)
 
+        # If no valid attacks
         if not valid_attacks:
             self.game_log.add_message("No enemies in range for Giant.", 'info')
             return
-    
+
+        # Perform the chosen attack
         self.perform_attack(giant, valid_attacks, opponent_units)
+
 
     def handle_attack_for_bomber(self, bomber, opponent_units):
         valid_attacks = {}
@@ -501,8 +662,12 @@ class Game:
 
     '''----------------------------Logique de Jeu--------------------------------------'''
 
-    def handle_player_turn(self, player_name, opponent_units, ally_units):
+
+
+
+    def handle_player_turn(self, player_name, opponent_units, ally_units, delta_time):
         '''Cette fonction gère le tour du joueur, inclus le mouvement et les attaques'''
+        print(f"{player_name}'s turn started")
         self.game_log.add_message(f"{player_name}'s turn", 'other')
         
         # Applique les effets DoT (Damage Over Time) pour l'Archer 
@@ -521,8 +686,6 @@ class Game:
             # Demander au joueur s'il veut bouger l'unité selectionnée 
             self.game_log.add_message(f"{selected_unit.__class__.__name__}'s turn. Move? (y/n)", 'mouvement')
             self.game_log.draw()
-            pygame.display.flip()
-
             moving = None
             while moving is None:
                 for event in pygame.event.get():
@@ -535,12 +698,14 @@ class Game:
                         elif event.key == pygame.K_n:
                             moving = False
                             selected_unit.is_selected = False  
-
+            # After the player answers movement (y/n), print a confirmation:
+            print("Player did  responded to movement prompt")
             if moving:
-                valid_cells = self.calculate_valid_cells(selected_unit)
-                self.draw_highlighted_cells(valid_cells)
-
+                valid_cells = self.calculate_valid_cells(selected_unit)              
                 while not has_acted:
+                    self.screen.fill(GC.GREEN)
+                    self.tile_map.draw(self.screen)
+                    self.draw_collectibles()  # Draw collectibles before highlighting
                     self.draw_highlighted_cells(valid_cells) 
 
                     for event in pygame.event.get():
@@ -553,6 +718,7 @@ class Game:
                             if (new_x, new_y) in valid_cells:
                                 selected_unit.move(new_x, new_y)
                                 has_acted = True
+                                self.update_collectibles(delta_time)
                                 self.game_log.add_message(f"{selected_unit.__class__.__name__} moved", 'mouvement')
                                 self.redraw_static_elements()
                                 self.flip_display()
@@ -682,7 +848,7 @@ def main():
     try:
         pygame.mixer.music.load("music/music.mp3")  
         pygame.mixer.music.play(-1)  
-        pygame.mixer.music.set_volume(0.5) 
+        pygame.mixer.music.set_volume(0) 
     except pygame.error as e:
         print(f"Error loading music: {e}") 
          
@@ -693,7 +859,7 @@ def main():
     pygame.display.set_caption("Rise of Heroes")
 
     rematch = False  # Suivre si le joueur veut une revanche.
-
+    last_time = pygame.time.get_ticks()
     while True:  # Boucle principale 
         if not rematch:
             action = main_menu(screen)  # Afficher le menu principal
@@ -705,7 +871,7 @@ def main():
         if action == "play":
             # Lancer le jeu
             random_seed = random.randint(0, 1000)  # Utiliser une graine aléatoire pour la génération de la carte
-            WEIGHTS = [25, 40, 10, 40, 10, 10]  # TERRAIN_TILES poids
+            WEIGHTS = [25, 50, 10, 50, 10, 10]  # TERRAIN_TILES poids
             world = World(GC.WORLD_X, GC.WORLD_Y, random_seed)
             tile_map = world.get_tiled_map(WEIGHTS)
 
@@ -713,21 +879,28 @@ def main():
             game = Game(screen, tile_map)
             winner = None
             running = True
+            last_time = pygame.time.get_ticks()
             while running:
+                print("Main loop iteration starting...")
+                current_time = pygame.time.get_ticks()
+                delta_time = (current_time - last_time) / 1000.0  # Convert to seconds
+                last_time = current_time
                 game.redraw_static_elements()  # Dessine la map et l'état initial
-
+                game.update_collectibles(delta_time)  # Update collectibles
+                
                 # Tour du Joueur 1
-                game.handle_player_turn("Player 1", game.player_units_p2, game.player_units_p1)
+                game.handle_player_turn("Player 1", game.player_units_p2, game.player_units_p1, delta_time)
                 if game.check_game_over():
                     winner = "Player 1"
                     break
 
                 # Tour du Joueur 2
-                game.handle_player_turn("Player 2", game.player_units_p1, game.player_units_p2)
+                game.handle_player_turn("Player 2", game.player_units_p1, game.player_units_p2, delta_time)
                 if game.check_game_over():
                     winner = "Player 2"
                     break
-
+                
+                game.draw_collectibles()  # Draw collectibles
                 pygame.display.flip()  # Mise a jour de l'affichage une fois par cycle
                 clock.tick(60)
 

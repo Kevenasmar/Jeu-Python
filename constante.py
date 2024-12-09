@@ -3,7 +3,7 @@
 class GameConstantes : 
 
     GRID_SIZE = 14
-    CELL_SIZE = 45
+    CELL_SIZE = 40
 
     
     WIDTH = GRID_SIZE * CELL_SIZE
