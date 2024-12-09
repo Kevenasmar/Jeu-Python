@@ -99,7 +99,6 @@ class Game:
         # Choose a random collectible type
         collectible_type = random.choice(list(self.collectible_templates.keys()))
         new_collectible = self.collectible_templates[collectible_type]()
-        
         # Find a valid spawn location
         walkable_tiles = []
         for x in range(GC.WORLD_X):
@@ -301,8 +300,8 @@ class Game:
         for x in range(0, GC.WIDTH, GC.CELL_SIZE):
             for y in range(0, GC.HEIGHT, GC.CELL_SIZE):
                 rect = pygame.Rect(x, y, GC.CELL_SIZE, GC.CELL_SIZE)
+        
         self.draw_collectibles()
-
         self.game_log.draw()
         pygame.display.flip()  # Mise a jour
     
@@ -328,7 +327,7 @@ class Game:
         """Dessiner une bordure blanche externe autour du groupe de cases valides et remplir la case survolée en blanc."""
         #Convertir la liste valid_cells en un ensemble pour accélérer la recherche des voisins.
         valid_cells_set = set(valid_cells)
-
+        
         # Directions pour vérifier les voisins (haut, droite, bas, gauche)
         directions = [
             (0, -1),  # Haut
@@ -339,7 +338,7 @@ class Game:
 
         # Effacer l'écran et redessiner la grille avant 
         self.tile_map.draw(self.screen)
-
+        self.draw_collectibles()
         # Parcourir toutes les cases valides et dessiner des bordures externes.
         for x, y in valid_cells:
             for i, (dx, dy) in enumerate(directions):
