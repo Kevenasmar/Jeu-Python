@@ -185,7 +185,7 @@ class Game:
         self.game_log.draw()  # Dessiner le game log
         pygame.display.flip()  # Mettre à jour l'affichage 
     
-    def draw_highlighted_cells(self, valid_cells):
+    def draw_highlighted_cells(self, valid_cells, is_attack = False):
         """Dessiner une bordure blanche externe autour du groupe de cases valides et remplir la case survolée en blanc."""
         #Convertir la liste valid_cells en un ensemble pour accélérer la recherche des voisins.
         valid_cells_set = set(valid_cells)
@@ -224,7 +224,8 @@ class Game:
                         end_pos[1] += GC.CELL_SIZE
 
                     # Dessine la ligne de bordure blanche
-                    pygame.draw.line(self.screen, (255,255,255), start_pos, end_pos, 2)
+                    color = GC.RED if is_attack else GC.WHITE
+                    pygame.draw.line(self.screen, color, start_pos, end_pos, 2)
 
         mouse_x, mouse_y = pygame.mouse.get_pos()
         hover_x, hover_y = mouse_x // GC.CELL_SIZE, mouse_y // GC.CELL_SIZE
@@ -232,7 +233,7 @@ class Game:
         # Si la case survolée est dans valid_cells, remplir la case de blanc 
         if (hover_x, hover_y) in valid_cells_set:
             rect = pygame.Rect(hover_x * GC.CELL_SIZE, hover_y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE)
-            pygame.draw.rect(self.screen, (255,255,255, 100), rect)  
+            pygame.draw.rect(self.screen, GC.WHITE, rect)  
 
         # Redessine toutes les unités pour s'assurer qu'elles apparaissent au dessus de la case surlignée 
         for unit in self.player_units_p1 + self.player_units_p2:
@@ -291,15 +292,17 @@ class Game:
             if valid_targets:
                 valid_attacks["Normal Arrow"] = (archer.normal_arrow, valid_targets)
 
+
         if archer.fire_arrow_range:
             valid_targets = self.calculate_valid_attack_cells(archer, archer.fire_arrow_range, opponent_units)
             if valid_targets:
                 valid_attacks["Fire Arrow"] = (archer.fire_arrow, valid_targets)
 
+
         if not valid_attacks:
             self.game_log.add_message("No enemies in range for Archer.", 'info')
             return
-
+        
         self.perform_attack(archer, valid_attacks, opponent_units)
      
     def handle_attack_for_giant(self, giant, opponent_units):
@@ -370,7 +373,7 @@ class Game:
                 self.player_units_p2.remove(bomber)
         else:           
             valid_cells = [(unit.x, unit.y) for unit in targets]
-            self.draw_highlighted_cells(valid_cells)
+            self.draw_highlighted_cells(valid_cells, is_attack = True)
             self.game_log.add_message("Choose a target for the bomb.", 'attack')
             self.game_log.draw()
             pygame.display.flip()
@@ -453,7 +456,7 @@ class Game:
                         chosen_action = attack_options[action_index]
 
         action_method, valid_cells = chosen_action
-        self.draw_highlighted_cells(valid_cells)
+        self.draw_highlighted_cells(valid_cells, is_attack = True)
 
         # Le joueur sélectionne une cible
         target_chosen = False
