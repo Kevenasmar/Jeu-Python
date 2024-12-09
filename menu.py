@@ -5,14 +5,12 @@ from constante import GameConstantes as GC
 
 
 def lighten_surface(surface, amount):
-    """Darken a surface by applying a transparent black layer."""
+    """Applique une couche blanche transparente sur une surface"""
     light_layer = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-    light_layer.fill((255, 255, 255, amount))  # Apply a black layer with alpha transparency
+    light_layer.fill((255, 255, 255, amount))
     surface.blit(light_layer, (0, 0))
     
-    
 def draw_text(screen, text, font, color, pos):
-    """Utility to render text on the screen."""
     surface = font.render(text, True, color)
     rect = surface.get_rect(center=pos)
     screen.blit(surface, rect)
@@ -21,11 +19,11 @@ def main_menu(screen):
     pygame.init()
     clock = pygame.time.Clock()
 
-    # Screen dimensions
+    # Dimensions de l'écran
     screen_width = screen.get_width()
     screen_height = screen.get_height()
 
-    # Load assets
+    #Assets
     battlefield_bg = pygame.image.load("Photos/menu_background.png").convert_alpha()
     battlefield_bg = pygame.transform.scale(battlefield_bg, (screen_width, screen_height))
 
@@ -37,17 +35,17 @@ def main_menu(screen):
     button_image = pygame.image.load("Photos/BOUTTON.png").convert_alpha()
     button_base = pygame.transform.scale(button_image, (150, 60))
 
-    # Load custom fonts
+    # Charger les fonts
     font_path = "font/Cinzel-Regular.otf"
     font_size = 30
     font = pygame.font.Font(font_path, font_size)
 
-    # Button positions
+    # Positions des bouttons
     play_button_rect = pygame.Rect(screen_width // 2 - 75, screen_height // 2 + 50, 150, 60)
     how_to_play_button_rect = pygame.Rect(screen_width // 2 - 75, screen_height // 2 + 120, 150, 60)
     exit_button_rect = pygame.Rect(screen_width // 2 - 75, screen_height // 2 + 190, 150, 60)
 
-    # Bobbing animation variables
+    # Variables d'Animation
     hero1_y = screen_height // 2 - 100
     hero2_y = screen_height // 2 - 100
     bobbing_speed = 2
@@ -68,23 +66,23 @@ def main_menu(screen):
                     pygame.quit()
                     sys.exit()
 
-        # Bobbing animation for heroes
+        # Animation Héros
         hero1_y += direction * bobbing_speed * 0.1
         hero2_y += direction * bobbing_speed * 0.1
         if hero1_y <= screen_height // 2 - 110 or hero1_y >= screen_height // 2 - 90:
             direction *= -1
 
-        # Draw background
+        # Dessine le fond
         screen.blit(battlefield_bg, (0, 0))
 
-        # Draw title
+        # Titre
         draw_text(screen, "Rise of Heroes", font, (255, 255, 255), (screen_width // 2, 50))
 
-        # Draw heroes with bobbing animation
+        # Animation
         screen.blit(hero1, (screen_width // 4 - 75, hero1_y))
         screen.blit(hero2, (3 * screen_width // 4 - 75, hero2_y))
 
-        # Draw buttons
+        # Bouttons
         play_button = button_base.copy()
         if play_button_rect.collidepoint(mouse_pos):
             lighten_surface(play_button, 100)
@@ -103,33 +101,33 @@ def main_menu(screen):
         screen.blit(exit_button, exit_button_rect.topleft)
         draw_text(screen, "   Quit", font, (255, 255, 255), exit_button_rect.center)
 
-        # Update display
+        # Mise a jour de l'affichage
         pygame.display.flip()
         clock.tick(60)
 
-
 def rules_screen(screen, p1_images, p2_images):
-    """Display game rules with better alignment for unit descriptions and a 'Back to Main Menu' button."""
-    font_path = "font/Junicode.ttf"  # Replace with your font's path
+    '''Affiche les règles du jeu'''
+    #Font
+    font_path = "font/Junicode.ttf"  
     font_size = 25
     try:
-        font = pygame.font.Font(font_path, font_size)  # Load custom font
+        font = pygame.font.Font(font_path, font_size)  
     except FileNotFoundError:
         print(f"Font file not found: {font_path}")
         sys.exit()
 
-    # Screen dimensions
-    background = pygame.image.load("Photos/background2.png").convert()  # Load your background image here
-    background = pygame.transform.scale(background, screen.get_size())  # Scale to fit screen
-    screen.blit(background, (0, 0))  # Draw the background onto the screen
+    # Dimensions de l'écran
+    background = pygame.image.load("Photos/background2.png").convert()  
+    background = pygame.transform.scale(background, screen.get_size()) 
+    screen.blit(background, (0, 0))  
 
-    # Title
+    # Titre
     center_x = screen.get_width() // 2
     y = 20
     draw_text(screen, "HOW TO PLAY", font, GC.RED, (center_x, y))
-    y += 50  # Add spacing
+    y += 50  
 
-    # General Rules Section
+    # Règles Générales
     general_rules = [
         "Objective: Defeat all enemy units.",
         "Each turn, you can move and/or attack with your units.",
@@ -138,14 +136,14 @@ def rules_screen(screen, p1_images, p2_images):
     ]
     for rule in general_rules:
         draw_text(screen, rule, font, (15, 13, 74), (center_x, y))
-        y += 30  # Spacing between lines
+        y += 30  
 
-    # Unit Descriptions Section
-    # Define columns for units
+    # Section Description des Unités
+    # Définir 4 colonnes pour chaque unitÑ
     column_width = screen.get_width() // 4
-    unit_y_start = y + 50  # Leave some space after general rules
+    unit_y_start = y + 50 
 
-    # Unit Info
+    # Informations sur chaque unité
     units_info = [
         {
             "name": "Archer",
@@ -185,54 +183,59 @@ def rules_screen(screen, p1_images, p2_images):
             ],
             "images": (p1_images[2], p2_images[2])
         },
+        
         {
             "name": "Bomber",
             "abilities": [
                 "- Bomb Throw:",
                 "Medium-range,",
                 "explosive attack",
-                " ",
-                "- Self-Destruct:",
-                "Deals massive damage"
+                "also affects allies"
+                "    ",
+                "- Explodes:",
+                "Kills the bomber",
+                "Deals massive damage",
+                "within range",
+                "also affects allies"
             ],
-            "images": (p1_images[0], p2_images[0])  # Placeholder for Bomber images
+            "images": (p1_images[3], p2_images[3])  # Placeholder for Bomber images
         }
     ]
 
     for i, unit in enumerate(units_info):
-        # Calculate the column position
+        # Calcule la position de la colonne
         column_x = i * column_width + column_width // 2
 
-        # Unit name
+        # Nom de l'unité
         unit_y = unit_y_start
         draw_text(screen, unit["name"], font, GC.RED, (column_x, unit_y))
 
-        # Player and Enemy Images
+        # Images
         unit_y += 40
         player_image, enemy_image = unit["images"]
-        screen.blit(player_image, (column_x - 50, unit_y))  # Left-align player image
-        screen.blit(enemy_image, (column_x + 10, unit_y))   # Right-align enemy image
+        screen.blit(player_image, (column_x - 50, unit_y))  
+        screen.blit(enemy_image, (column_x + 10, unit_y))  
 
-        # Unit Abilities
+        # Compétences des unités
         unit_y += 60
         for ability in unit["abilities"]:
             draw_text(screen, ability, font, (15, 13, 74), (column_x, unit_y))
-            unit_y += 25  # Space between abilities
+            unit_y += 25  
 
-    # Back to Main Menu Button
-    button_y = GC.HEIGHT - 80  # Position closer to the bottom
+    # Retour au Menu Principale (Boutton)
+    button_y = GC.HEIGHT - 80  
     button_image = pygame.image.load("Photos/BOUTTON.png").convert_alpha()
-    button_image = pygame.transform.scale(button_image, (150, 50))  # Scale to match the desired button size
+    button_image = pygame.transform.scale(button_image, (150, 50)) 
     back_button_rect = pygame.Rect(center_x - 75, button_y, 150, 50)
 
-    # Draw the button image
+    # Dessine l'image du boutton
     screen.blit(button_image, (center_x - 75, button_y))
     draw_text(screen, "Main Menu", font, GC.WHITE, back_button_rect.center)
 
-    # Update the screen
+    # Mise a jour de l'ecran
     pygame.display.flip()
 
-    # Event loop for the screen
+    # Boucle "event"
     while True:
         mouse_pos = pygame.mouse.get_pos()
         for event in pygame.event.get():
@@ -241,42 +244,39 @@ def rules_screen(screen, p1_images, p2_images):
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if back_button_rect.collidepoint(event.pos):
-                    return "back_to_menu"  # Explicitly return this action
-
-
-
+                    return "back_to_menu" 
 
 def game_over_menu(screen, winner, background_path="Photos/background2.png"):
-    """Display the Game Over menu with a custom background, winner's animation, title, and options for rematch or quit."""
+    '''Affiche le menu Game Over'''
     clock = pygame.time.Clock()
 
-    # Fonts
-    font_path = "font/CinzelDecorative-Bold.ttf"  # Replace with your font's path
+    # Font
+    font_path = "font/CinzelDecorative-Bold.ttf" 
     font_size = 30 
     try:
-        font = pygame.font.Font(font_path, font_size)  # Load custom font
+        font = pygame.font.Font(font_path, font_size) 
     except FileNotFoundError:
         print(f"Font file not found: {font_path}")
         sys.exit()
 
-    # Load the custom background image
+    # Image de fond
     background = pygame.image.load(background_path).convert()
     background = pygame.transform.scale(background, (screen.get_width(), screen.get_height()))
 
-    # Load images for animation
+    # Images des héros pour chaque équipe
     player1_image = pygame.image.load("Photos/archer1_winner.png").convert_alpha()
     player2_image = pygame.image.load("Photos/archer2_winner.png").convert_alpha()
 
-    # Scale images
+ 
     player1_image = pygame.transform.scale(player1_image, (200, 200))
     player2_image = pygame.transform.scale(player2_image, (200, 200))
 
-    # Animation variables
+    # Variables d'Animation
     char_y = screen.get_height() // 2 - 150
     direction = 1
     bobbing_speed = 2
 
-    # Button positions
+    # Positions de Bouttons
     rematch_button_pos = pygame.Rect(screen.get_width() // 2 - 125, 400, 250, 70)
     quit_button_pos = pygame.Rect(screen.get_width() // 2 - 125, 480, 250, 70)
 
@@ -293,15 +293,15 @@ def game_over_menu(screen, winner, background_path="Photos/background2.png"):
                     pygame.quit()
                     sys.exit()
 
-        # Character bobbing animation
+        # Animation
         char_y += direction * bobbing_speed * 0.1
         if char_y <= screen.get_height() // 2 - 160 or char_y >= screen.get_height() // 2 - 140:
             direction *= -1
 
-        # Draw background
+        # Fond
         screen.blit(background, (0, 0))
 
-        # Display "Game Over" and winner title
+        # Affiche "Game Over" et le gagnant
         draw_text(screen, "Game Over!", font, (255, 0, 0), (screen.get_width() // 2, 50))
         if winner == "Player 1":
             draw_text(screen, "PLAYER 1 WINS!", font, (255, 255, 255), (screen.get_width() // 2, 150))
@@ -310,7 +310,7 @@ def game_over_menu(screen, winner, background_path="Photos/background2.png"):
             draw_text(screen, "PLAYER 2 WINS!", font, (255, 255, 255), (screen.get_width() // 2, 150))
             screen.blit(player2_image, (screen.get_width() // 2 - 100, char_y))
 
-        # Load and draw buttons
+        # Charge et dessine les bouttons
         button_image = pygame.image.load("Photos/BOUTTON.png").convert_alpha()
         button_base = pygame.transform.scale(button_image, (250, 70))
         
@@ -322,14 +322,9 @@ def game_over_menu(screen, winner, background_path="Photos/background2.png"):
         screen.blit(quit_button, quit_button_pos.topleft)
         draw_text(screen, "Exit", font, (255, 255, 255), quit_button_pos.center)
 
-        # Update display
+        # Mise a Jour de l'Affichage
         pygame.display.flip()
         clock.tick(60)
-
-
-
-
-
 
 def main():
     pygame.init()
@@ -337,7 +332,6 @@ def main():
     pygame.display.set_caption("L'Ascension des Héros")
     clock = pygame.time.Clock()
 
-    # Load unit images
     p1_images = [
         pygame.image.load('Photos/archer.png'),
         pygame.image.load('Photos/mage.png'),
@@ -353,38 +347,32 @@ def main():
         p2_images[i] = pygame.transform.scale(p2_images[i], (50, 50))
 
     while True:
-        # Show the main menu
         action = main_menu(screen)
 
         if action == "play":
-            # Directly start the game
-            random_seed = 42  # or any other seed logic
+            random_seed = 42  
             tile_map = Game.generate_random_map(random_seed)
             game = Game(screen, tile_map)
-            winner = game.main_loop()  # Assume `main_loop()` returns the winner
+            winner = game.main_loop() 
 
-            # Show game over menu
             action = game_over_menu(screen, winner)
             if action == "rematch":
-                continue  # Restart the game loop
+                continue 
             elif action == "quit":
                 pygame.quit()
                 sys.exit()
 
         elif action == "how_to_play":
-            # Show the rules screen
+
             rules_action = rules_screen(screen, p1_images, p2_images)
             if rules_action == "back_to_menu":
-                continue  # Return to the main menu
+                continue  
 
         elif action == "quit":
             pygame.quit()
             sys.exit()
 
         clock.tick(GC.FPS)
-
-
-
 
 if __name__ == "__main__":
     main()

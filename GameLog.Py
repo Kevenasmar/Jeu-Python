@@ -36,6 +36,8 @@ class GameLog :
             couleur_text = (255, 255, 255)
         elif type == 'action':
             couleur_text = GC.RED
+        elif type == 'info':
+            couleur_text = GC.BLUE
         
 
         timestamp = datetime.now().strftime("%H:%M:%S")
