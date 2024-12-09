@@ -42,13 +42,10 @@ class Unit:
         self.team = team  # 'player' ou 'enemy'
         self.is_selected = False
 
-<<<<<<< HEAD
     def get_position(self) : 
         return (self.x, self.y)
-=======
 
     '''Méthodes'''
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
 
     def move(self, new_x, new_y):
         """Déplace l'unité vers une nouvelle position dans son rayon de vitesse."""

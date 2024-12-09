@@ -32,7 +32,6 @@ class Game:
             Bomber(3, 0, 100, 7, 1, 4, 2, 'Photos/bomber.png', 'player')
         ] 
 
-<<<<<<< HEAD
         self.enemy_units = [
             Archer(5, 6, 100, 5, 2, 2, 3, 'Photos/enemy_archer.png', 'enemy'),
             Mage(6, 6, 100, 3, 1, 1, 2, 'Photos/enemy_mage.png', 'enemy'),
@@ -40,22 +39,12 @@ class Game:
         ]
         
         self.player_units_p2 = [
-           #(x, y, health, attack, defense, speed, vision, image_path, team)
-=======
-        self.player_units_p2 = [ 
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
             Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/enemy_archer.png', 'enemy'),
             Mage(1, 0, 100, 3, 1, 4, 2, 'Photos/enemy_mage.png', 'enemy'),
             Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/enemy_giant.png', 'enemy'),
             Bomber(3, 0, 100, 7, 1, 4, 2, 'Photos/enemy_bomber.png', 'enemy')
         ]
-<<<<<<< HEAD
         # Initialize spawn for bomber units as well
-=======
-
-        self.tile_map = Map_Aleatoire(tile_map, TERRAIN_TILES, GC.CELL_SIZE)
-        self.walkable_tiles = self.inititialize_walkable_tiles()
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
         self.spawn_units()
         
         self.walkable_tiles = self.initisialize_walkable_tiles()
@@ -186,12 +175,8 @@ class Game:
                 if any(self.tile_map.is_walkable(x, y, unit) for unit in self.player_units_p1 + self.player_units_p1 ):
                     set_walkable_tiles.add((x, y))
         return set_walkable_tiles
-<<<<<<< HEAD
 
-=======
-    
     '''Ici, on gère l'apparition des unités sur la map en début de jeu'''
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
     def get_spawn_sector_p1(self) :
         sector_width = GC.WORLD_X // 3 
         sector_height = GC.WORLD_Y // 3
@@ -245,7 +230,6 @@ class Game:
             unit.x, unit.y = location     
         self.game_log.draw()
 
-<<<<<<< HEAD
     '''-----------------END OF THIS PART ---------------------------'''
     def is_occupied(self, x, y):
         """
@@ -257,11 +241,9 @@ class Game:
         return False
 
     '''Utilities, display and movement'''
-=======
 
     '''------------------Utilitaires, affichage et déplacement-----------------------'''
   
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
     def calculate_valid_cells(self, unit):
         """Retourne les cases accessibles pour une unité, en excluant les cases occupées par d'autres unités dans son rayon de déplacement."""
         valid_cells = []
@@ -333,20 +315,19 @@ class Game:
         if hasattr(self, 'valid_cells') and self.valid_cells:  # S'assurer que valid_cells soit bien définie
             self.draw_highlighted_cells(self.valid_cells)
 
-<<<<<<< HEAD
         self.draw_collectibles()
 
-        # Draw all units (including health bars)
-=======
         # Dessiner toutes les unités avec leurs bars de vie 
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
         for unit in self.player_units_p1 + self.player_units_p2:
             unit.draw(self.screen)
 
         self.game_log.draw()  # Dessiner le game log
         pygame.display.flip()  # Mettre à jour l'affichage 
     
-<<<<<<< HEAD
+    def draw_highlighted_cells(self, valid_cells):
+        """Dessiner une bordure blanche externe autour du groupe de cases valides et remplir la case survolée en blanc."""
+        #Convertir la liste valid_cells en un ensemble pour accélérer la recherche des voisins.
+        valid_cells_set = set(valid_cells)
     def draw_highlighted_cells(self, move_cells=None, direct_cells=None, secondary_cells=None, is_attack_phase=False):
         """
         Draw highlighted cells with distinct colors:
@@ -359,12 +340,6 @@ class Game:
         move_cells = move_cells or []
         direct_cells = direct_cells or []
         secondary_cells = secondary_cells or []
-=======
-    def draw_highlighted_cells(self, valid_cells):
-        """Dessiner une bordure blanche externe autour du groupe de cases valides et remplir la case survolée en blanc."""
-        #Convertir la liste valid_cells en un ensemble pour accélérer la recherche des voisins.
-        valid_cells_set = set(valid_cells)
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
 
         # Directions pour vérifier les voisins (haut, droite, bas, gauche)
         directions = [
@@ -376,25 +351,12 @@ class Game:
 
         # Effacer l'écran et redessiner la grille avant 
         self.tile_map.draw(self.screen)
-<<<<<<< HEAD
-        self.draw_collectibles()
-        # Highlight movement cells (white)
-        for x, y in move_cells:
-=======
 
         # Parcourir toutes les cases valides et dessiner des bordures externes.
         for x, y in valid_cells:
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
             for i, (dx, dy) in enumerate(directions):
                 neighbor = (x + dx, y + dy)
-                if neighbor not in move_cells:
-                    start_pos = (x * GC.CELL_SIZE, y * GC.CELL_SIZE)
-                    end_pos = list(start_pos)
 
-<<<<<<< HEAD
-                    # Adjust line positions for the border
-                    if i == 0:  # Top border
-=======
                 # Si le voisin n'est pas dans valid_cells, dessine la bordure  
                 if neighbor not in valid_cells_set:
                     start_pos = (x * GC.CELL_SIZE, y * GC.CELL_SIZE)  # Haut-Gauche de la cellule
@@ -402,7 +364,6 @@ class Game:
 
                     # Ajuster les positions des lignes en fonction de la direction.
                     if i == 0:  # Bord supérieur
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
                         end_pos[0] += GC.CELL_SIZE
                     elif i == 1:  # Bord Droit
                         start_pos = (start_pos[0] + GC.CELL_SIZE, start_pos[1])
@@ -413,40 +374,17 @@ class Game:
                     elif i == 3:  # Bord Gauche
                         end_pos[1] += GC.CELL_SIZE
 
-<<<<<<< HEAD
-                    # Draw the border line (white for movement cells)
-                    pygame.draw.line(self.screen, (255, 255, 255), start_pos, end_pos, 2)
-
-        # Highlight direct attack cells (red)
-        for x, y in direct_cells:
-            rect = pygame.Rect(x * GC.CELL_SIZE, y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE)
-            pygame.draw.rect(self.screen, (255, 0, 0), rect, 2)  # Red border for direct cells
-
-        # Highlight secondary affected cells (yellow)
-        for x, y in secondary_cells:
-            rect = pygame.Rect(x * GC.CELL_SIZE, y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE)
-            pygame.draw.rect(self.screen, (255, 255, 0), rect, 2)  # Yellow border for secondary cells
-
-        # Highlight the hovered cell
-=======
                     # Dessine la ligne de bordure blanche
                     pygame.draw.line(self.screen, (255,255,255), start_pos, end_pos, 2)
 
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
         mouse_x, mouse_y = pygame.mouse.get_pos()
         hover_x, hover_y = mouse_x // GC.CELL_SIZE, mouse_y // GC.CELL_SIZE
         hover_color = (255, 0, 0, 100) if is_attack_phase else (255, 255, 255, 100)
 
-<<<<<<< HEAD
-        if (hover_x, hover_y) in move_cells + direct_cells + secondary_cells:
-            rect = pygame.Rect(hover_x * GC.CELL_SIZE, hover_y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE)
-            pygame.draw.rect(self.screen, hover_color, rect)  # Fill hovered cell with the appropriate color
-=======
         # Si la case survolée est dans valid_cells, remplir la case de blanc 
         if (hover_x, hover_y) in valid_cells_set:
             rect = pygame.Rect(hover_x * GC.CELL_SIZE, hover_y * GC.CELL_SIZE, GC.CELL_SIZE, GC.CELL_SIZE)
             pygame.draw.rect(self.screen, (255,255,255, 100), rect)  
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
 
         # Redessine toutes les unités pour s'assurer qu'elles apparaissent au dessus de la case surlignée 
         for unit in self.player_units_p1 + self.player_units_p2:
@@ -457,13 +395,8 @@ class Game:
         pygame.display.update()
 
 
-<<<<<<< HEAD
-
-    '''Attacks'''
-=======
     '''--------------------------------------Attaques-----------------------------------------'''
     
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
     def calculate_valid_attack_cells(self, unit, attack_range, opponent_units):
         '''Retourne les cases d'attaques valides pour une unité'''
         valid_attack_cells = []
@@ -561,18 +494,7 @@ class Game:
 
 
     def handle_attack_for_bomber(self, bomber, opponent_units):
-<<<<<<< HEAD
-        """
-        Handles the Bomber's attack logic, allowing bombs to hit all units within range.
-        Highlights:
-        - Direct target cells in red.
-        - Secondary affected cells in yellow for area-of-effect damage.
-        """
-        # Calculate valid targets within the Bomber's attack range
-        valid_targets = self.calculate_valid_attack_cells(bomber, bomber.bomb_range, opponent_units)
-=======
         valid_attacks = {}
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
 
         if bomber.bomb_range:
             valid_targets = self.calculate_valid_attack_cells(bomber, bomber.bomb_range, opponent_units)
@@ -587,24 +509,6 @@ class Game:
             self.game_log.add_message("No valid actions for Bomber.", 'info')
             return
 
-<<<<<<< HEAD
-        # Highlight the bomb's AoE
-        direct_cells = [(target.x, target.y) for target in valid_targets]
-        secondary_cells = [
-            (cell_x, cell_y)
-            for target in valid_targets
-            for dx in range(-1, 2)
-            for dy in range(-1, 2)
-            if (cell_x := target.x + dx) != target.x or (cell_y := target.y + dy) != target.y
-        ]
-        self.draw_highlighted_cells(direct_cells=direct_cells, secondary_cells=secondary_cells)
-
-        # Perform the bomb attack
-        self.perform_attack(bomber, {"Throw Bomb": (bomber.throw_bomb, valid_targets)}, opponent_units)
-
-
-    
-=======
         self.game_log.add_message("Choose your action:", 'attack')
         attack_options = {}
         for i, (action_name, (method, targets)) in enumerate(valid_attacks.items(), start=1):
@@ -668,7 +572,6 @@ class Game:
                             )
                             target_chosen = True
 
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
     def handle_attack_for_mage(self, mage, ally_units, opponent_units):
         valid_attacks = {}
 
@@ -690,48 +593,29 @@ class Game:
 
     def perform_attack(self, unit, valid_attacks, all_units):
         """
-<<<<<<< HEAD
-        Handles the selection and execution of an attack action for a unit.
-        Highlights:
-        - Initially, only direct cells are shown.
-        - Secondary cells are shown after selecting an ability that involves them.
-        """
-=======
         Cette fonction exécute une attaque pour une unité donnée. 
         Elle affiche les options d'attaque valides, permet au joueur de choisir une action, 
         et applique l'effet de l'attaque sur la cible sélectionnée. Elle met à jour l'état 
         du jeu, y compris les unités affectées et le journal des événements.
         """
         
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
         if not valid_attacks:
             self.game_log.add_message(f"No valid targets for {unit.__class__.__name__}.", 'info')
             return
 
-<<<<<<< HEAD
-        # Display available attack options
-        self.game_log.add_message(f"Choose an action for {unit.__class__.__name__}:", 'attack')
-        attack_options = {}
-        for i, (action_name, (method, targets)) in enumerate(valid_attacks.items(), start=1):
-            attack_options[i] = (action_name, method, targets)
-=======
         # Afficher les options d'attaque 
         self.game_log.add_message("Choose your action:", 'attack')
         attack_options = {}
         for i, (action_name, (method, targets)) in enumerate(valid_attacks.items(), start=1):
             # Extraire les positions des cibles valides 
             attack_options[i] = (method, [(target.x, target.y) for target in targets])
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
             self.game_log.add_message(f"{i}: {action_name}", 'attack')
 
         self.game_log.draw()
         pygame.display.flip()
 
-<<<<<<< HEAD
-        # Wait for the player to choose an attack
-=======
         # Le joueur choisit une action
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
+        # Wait for the player to choose an attack
         chosen_action = None
         while chosen_action is None:
             for event in pygame.event.get():
@@ -746,7 +630,6 @@ class Game:
         # Extract the chosen action details
         action_name, action_method, valid_targets = chosen_action
 
-<<<<<<< HEAD
         # Calculate cells to highlight for attack
         direct_cells = [(target.x, target.y) for target in valid_targets]
         secondary_cells = []
@@ -772,10 +655,7 @@ class Game:
         # Highlight the target cells (include secondary cells only after the ability is selected)
         self.draw_highlighted_cells(direct_cells=direct_cells, secondary_cells=secondary_cells)
 
-        # Wait for the player to select a target
-=======
         # Le joueur sélectionne une cible
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
         target_chosen = False
         while not target_chosen:
             for event in pygame.event.get():
@@ -786,18 +666,6 @@ class Game:
                     mouse_x, mouse_y = pygame.mouse.get_pos()
                     target_x, target_y = mouse_x // GC.CELL_SIZE, mouse_y // GC.CELL_SIZE
 
-<<<<<<< HEAD
-                    # Check if the selected cell matches any valid target
-                    for target in valid_targets:
-                        if (target.x, target.y) == (target_x, target_y):
-                            # Handle special abilities with additional logic
-                            if hasattr(unit, 'stomp') and action_method == unit.stomp:
-                                action_method(target, all_units, self.tile_map, self)  # Pass all required context
-                            elif hasattr(unit, 'throw_bomb') and action_method == unit.throw_bomb:
-                                action_method(target, all_units, self.tile_map, self)
-                            else:
-                                action_method(target)  # Standard attacks
-=======
                     # Vérifier si la case cliquée correspond à une position cible valide
                     for target in all_units:  # Valider par rapport à toutes les unités
                         if (target.x, target.y) == (target_x, target_y) and (target_x, target_y) in valid_cells:
@@ -812,7 +680,6 @@ class Game:
                                     action_method(target)  # Attaque normale
                             else:
                                 action_method(target)  #Exécuter l'action sélectionnée (actions autres que les flèches)
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
 
                             # Vérifier si la cible est morte 
                             if target.health <= 0:
@@ -835,18 +702,14 @@ class Game:
                             return
 
 
-<<<<<<< HEAD
+    '''----------------------------Logique de Jeu--------------------------------------'''
+
+
 
 
     def handle_player_turn(self, player_name, opponent_units, ally_units, delta_time):
-        """Handle the player's turn, including movement and attacks."""
-        print(f"{player_name}'s turn started")
-=======
-    '''----------------------------Logique de Jeu--------------------------------------'''
-
-    def handle_player_turn(self, player_name, opponent_units, ally_units):
         '''Cette fonction gère le tour du joueur, inclus le mouvement et les attaques'''
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
+        print(f"{player_name}'s turn started")
         self.game_log.add_message(f"{player_name}'s turn", 'other')
         
         # Applique les effets DoT (Damage Over Time) pour l'Archer 
@@ -876,26 +739,18 @@ class Game:
                             moving = True
                         elif event.key == pygame.K_n:
                             moving = False
-<<<<<<< HEAD
-                            selected_unit.is_selected = False  # Deselect the unit if not moved
+                            selected_unit.is_selected = False  
             # After the player answers movement (y/n), print a confirmation:
             print("Player did  responded to movement prompt")
-=======
-                            selected_unit.is_selected = False  
-
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
             if moving:
                 valid_cells = self.calculate_valid_cells(selected_unit)              
                 while not has_acted:
-<<<<<<< HEAD
                     self.screen.fill(GC.GREEN)
                     self.tile_map.draw(self.screen)
                     self.draw_collectibles()  # Draw collectibles before highlighting
                     self.draw_highlighted_cells(move_cells=valid_cells)
-=======
                     self.draw_highlighted_cells(valid_cells) 
 
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT:
                             pygame.quit()
@@ -911,12 +766,7 @@ class Game:
                                 self.redraw_static_elements()
                                 self.flip_display()
 
-<<<<<<< HEAD
-
-            # Determine attack logic
-=======
             # Logique d'Attaque
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
             valid_attacks = []
             los_blocked = False
             in_range = False
@@ -1039,37 +889,21 @@ def main():
     # Musique de fond
     pygame.mixer.init()
     try:
-<<<<<<< HEAD
-        pygame.mixer.music.load("music/music.mp3")  # Replace with your MP3 file's path
-        pygame.mixer.music.play(-1)  # -1 makes it loop indefinitely
-        pygame.mixer.music.set_volume(0)  # Adjust the volume (0.0 to 1.0)
-=======
         pygame.mixer.music.load("music/music.mp3")  
         pygame.mixer.music.play(-1)  
         pygame.mixer.music.set_volume(0.5) 
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
     except pygame.error as e:
         print(f"Error loading music: {e}") 
          
     clock = pygame.time.Clock()
-<<<<<<< HEAD
-    # Initialize the screen with extra space for the game log
-    screen = pygame.display.set_mode((GC.WIDTH + 500, GC.HEIGHT), pygame.SRCALPHA)
-    pygame.display.set_caption("Rise of Heroes")
-
-    rematch = False  # Tracks if the player wants a rematch
-    last_time = pygame.time.get_ticks()
-    while True:  # Main loop for handling restarts
-=======
 
     # Initialiser l'écran avec un espace supplémentaire pour le Game Log
     screen = pygame.display.set_mode((GC.WIDTH + 500, GC.HEIGHT), pygame.SRCALPHA)
     pygame.display.set_caption("Rise of Heroes")
 
     rematch = False  # Suivre si le joueur veut une revanche.
-
+    last_time = pygame.time.get_ticks()
     while True:  # Boucle principale 
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
         if not rematch:
             action = main_menu(screen)  # Afficher le menu principal
         else:
@@ -1078,18 +912,11 @@ def main():
         rematch = False  
 
         if action == "play":
-<<<<<<< HEAD
-            # Directly start the game
-            random_seed = random.randint(0, 1000)  # Use a random seed for map generation
-            WEIGHTS = [25, 50, 10, 50, 10, 10]  # TERRAIN_TILES weights
-=======
             # Lancer le jeu
             random_seed = random.randint(0, 1000)  # Utiliser une graine aléatoire pour la génération de la carte
-            WEIGHTS = [25, 40, 10, 40, 10, 10]  # TERRAIN_TILES poids
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
+            WEIGHTS = [25, 50, 10, 50, 10, 10]  # TERRAIN_TILES poids
             world = World(GC.WORLD_X, GC.WORLD_Y, random_seed)
             tile_map = world.get_tiled_map(WEIGHTS)
-           
 
             # Créer l'instance du jeu
             game = Game(screen, tile_map)
@@ -1097,44 +924,27 @@ def main():
             running = True
             last_time = pygame.time.get_ticks()
             while running:
-<<<<<<< HEAD
                 print("Main loop iteration starting...")
                 current_time = pygame.time.get_ticks()
                 delta_time = (current_time - last_time) / 1000.0  # Convert to seconds
                 last_time = current_time
-                game.redraw_static_elements()  # Draw the map and initial state
+                game.redraw_static_elements()  # Dessine la map et l'état initial
                 game.update_collectibles(delta_time)  # Update collectibles
                 
-                # Player 1's turn
-                game.handle_player_turn("Player 1", game.player_units_p2, game.player_units_p1, delta_time)
-=======
-                game.redraw_static_elements()  # Dessine la map et l'état initial
-
                 # Tour du Joueur 1
-                game.handle_player_turn("Player 1", game.player_units_p2, game.player_units_p1)
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
+                game.handle_player_turn("Player 1", game.player_units_p2, game.player_units_p1, delta_time)
                 if game.check_game_over():
                     winner = "Player 1"
                     break
 
-<<<<<<< HEAD
-                # Player 2's turn
+                # Tour du Joueur 2
                 game.handle_player_turn("Player 2", game.player_units_p1, game.player_units_p2, delta_time)
                 if game.check_game_over():
                     winner = "Player 2"
                     break
                 
                 game.draw_collectibles()  # Draw collectibles
-                pygame.display.flip()  # Update the display once per cycle
-=======
-                # Tour du Joueur 2
-                game.handle_player_turn("Player 2", game.player_units_p1, game.player_units_p2)
-                if game.check_game_over():
-                    winner = "Player 2"
-                    break
-
                 pygame.display.flip()  # Mise a jour de l'affichage une fois par cycle
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
                 clock.tick(60)
 
             # Afficher le menu de fin de jeu 
