@@ -310,7 +310,7 @@ class Game:
         if giant.stomp_range:
             valid_targets = self.calculate_valid_attack_cells(giant, giant.stomp_range, opponent_units)         
             if valid_targets:
-                valid_attacks["Stomp"] = (giant.stomp, valid_targets)
+                valid_attacks["Stomp"] = (lambda target: giant.stomp(target, self.tile_map), valid_targets)
     
         self.perform_attack(giant, valid_attacks, opponent_units)
 

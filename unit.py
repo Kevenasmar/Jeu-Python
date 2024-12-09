@@ -137,29 +137,46 @@ class Giant(Unit):
         """Inflige des dégâts importants à la cible."""
         target.health -= self.attack_power * 2  # Dégâts élevés
 
-    def stomp(self, target):
-        """Inflige des dégâts très importants et repousse la cible d'une case."""
-        target.health -= self.attack_power * 3  # Dégâts très élevés
+    def stomp(self, target, tile_map):
+        """Inflict heavy damage and knock back the target. Finds an alternative
+        valid tile if the initial knockback position is non-walkable.
+        """
+        target.health -= self.attack_power * 3  # Very high damage
 
-        # Déterminer la direction du recul
+        # Determine the knockback direction
         dx = target.x - self.x
         dy = target.y - self.y
 
-        # Normaliser la direction du recul
+        # Normalize the knockback direction
         if dx != 0:
             dx = int(dx / abs(dx))
         if dy != 0:
             dy = int(dy / abs(dy))
 
-        # Appliquer le recul d'une case
+        # Apply the knockback
         new_x = target.x + dx
         new_y = target.y + dy
 
-        # S'assurer que la cible ne sorte pas de la grille
-        if 0 <= new_x < GC.GRID_SIZE:
-            target.x = new_x
-        if 0 <= new_y < GC.GRID_SIZE:
-            target.y = new_y
+        # Check if the new position is within bounds and walkable
+        if 0 <= new_x < GC.GRID_SIZE and 0 <= new_y < GC.GRID_SIZE and tile_map.is_walkable(new_x, new_y, target):
+            target.x, target.y = new_x, new_y
+        else:
+            # Collect adjacent valid tiles excluding the Giant's position
+            adjacent_cells = [
+                (target.x + nx, target.y + ny)
+                for nx, ny in [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)]
+                if 0 <= target.x + nx < GC.GRID_SIZE and 0 <= target.y + ny < GC.GRID_SIZE
+                and tile_map.is_walkable(target.x + nx, target.y + ny, target)
+                and (target.x + nx, target.y + ny) != (self.x, self.y)  # Exclude Giant's position
+            ]
+
+            # If valid tiles are found, choose one randomly
+            if adjacent_cells:
+                new_x, new_y = random.choice(adjacent_cells)
+                target.x, target.y = new_x, new_y
+
+
+
 
 
 '''Le Mage'''
