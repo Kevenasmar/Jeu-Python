@@ -207,14 +207,11 @@ class Giant(Unit):
             unit.x = new_x
             unit.y = new_y
 
-<<<<<<< HEAD
-=======
         # S'assurer que la cible ne sorte pas de la grille
         if 0 <= new_x < GC.GRID_SIZE:
-            target.x = new_x
+            target.x = new_x # type: ignore
         if 0 <= new_y < GC.GRID_SIZE:
-            target.y = new_y
->>>>>>> a45332278309099374fa68504b2a84aa243a9099
+            target.y = new_y # type: ignore
 
 
 '''Le Mage'''

@@ -47,7 +47,7 @@ class Game:
         # Initialize spawn for bomber units as well
         self.spawn_units()
         
-        self.walkable_tiles = self.initisialize_walkable_tiles()
+        self.walkable_tiles = self.inititialize_walkable_tiles()
         self.collectible_spawn_timer = 0
         self.spawn_interval = 2  # Seconds between spawns
         self.collectible_items = []
@@ -328,18 +328,6 @@ class Game:
         """Dessiner une bordure blanche externe autour du groupe de cases valides et remplir la case survolée en blanc."""
         #Convertir la liste valid_cells en un ensemble pour accélérer la recherche des voisins.
         valid_cells_set = set(valid_cells)
-    def draw_highlighted_cells(self, move_cells=None, direct_cells=None, secondary_cells=None, is_attack_phase=False):
-        """
-        Draw highlighted cells with distinct colors:
-        - Movement cells: White.
-        - Direct attack cells: Red.
-        - Secondary affected cells: Yellow.
-        - Hovered cell: White for movement phase, Red for attack phase.
-        """
-        # Default to empty lists if None
-        move_cells = move_cells or []
-        direct_cells = direct_cells or []
-        secondary_cells = secondary_cells or []
 
         # Directions pour vérifier les voisins (haut, droite, bas, gauche)
         directions = [
@@ -379,7 +367,6 @@ class Game:
 
         mouse_x, mouse_y = pygame.mouse.get_pos()
         hover_x, hover_y = mouse_x // GC.CELL_SIZE, mouse_y // GC.CELL_SIZE
-        hover_color = (255, 0, 0, 100) if is_attack_phase else (255, 255, 255, 100)
 
         # Si la case survolée est dans valid_cells, remplir la case de blanc 
         if (hover_x, hover_y) in valid_cells_set:
@@ -393,6 +380,7 @@ class Game:
         # Mise a jour de l'affichage
         self.game_log.draw()
         pygame.display.update()
+
 
 
     '''--------------------------------------Attaques-----------------------------------------'''
@@ -615,7 +603,6 @@ class Game:
         pygame.display.flip()
 
         # Le joueur choisit une action
-        # Wait for the player to choose an attack
         chosen_action = None
         while chosen_action is None:
             for event in pygame.event.get():
@@ -627,33 +614,8 @@ class Game:
                     if action_index in attack_options:
                         chosen_action = attack_options[action_index]
 
-        # Extract the chosen action details
-        action_name, action_method, valid_targets = chosen_action
-
-        # Calculate cells to highlight for attack
-        direct_cells = [(target.x, target.y) for target in valid_targets]
-        secondary_cells = []
-
-        # If the chosen action has secondary effects, calculate them
-        if hasattr(unit, 'stomp') and action_method == unit.stomp:
-            for target in valid_targets:
-                dx, dy = target.x - unit.x, target.y - unit.y
-                secondary_cells += [
-                    (target.x + dx, target.y + dy),       # Cell behind the target
-                    (target.x - dy, target.y - dx),       # Perpendicular cell 1
-                    (target.x + dy, target.y + dx)        # Perpendicular cell 2
-                ]
-        elif hasattr(unit, 'throw_bomb') and action_method == unit.throw_bomb:
-            for target in valid_targets:
-                secondary_cells += [
-                    (target.x + dx, target.y + dy)
-                    for dx in range(-1, 2)
-                    for dy in range(-1, 2)
-                    if (dx, dy) != (0, 0)  # Exclude the target cell itself
-                ]
-
-        # Highlight the target cells (include secondary cells only after the ability is selected)
-        self.draw_highlighted_cells(direct_cells=direct_cells, secondary_cells=secondary_cells)
+        action_method, valid_cells = chosen_action
+        self.draw_highlighted_cells(valid_cells)
 
         # Le joueur sélectionne une cible
         target_chosen = False
@@ -683,20 +645,17 @@ class Game:
 
                             # Vérifier si la cible est morte 
                             if target.health <= 0:
-                                self.game_log.add_message(f"{target.__class__.__name__} has been defeated!", 'dead')
+                                self.game_log.add_message(f"{target.__class__.__name__} est mort !", 'dead')
                                 if target in self.player_units_p1:
                                     self.player_units_p1.remove(target)
                                 elif target in self.player_units_p2:
                                     self.player_units_p2.remove(target)
-
-                            # Log the action and end the target selection
+                                    
+                            target_chosen = True
                             self.game_log.add_message(
-                                f"{unit.__class__.__name__} used {action_name} on {target.__class__.__name__}.",
+                                f"{unit.__class__.__name__} performed {action_method.__name__} on {target.__class__.__name__}.",
                                 'attack'
                             )
-                            target_chosen = True
-
-                            # Redraw the game state and update the display
                             self.redraw_static_elements()
                             self.flip_display()
                             return
@@ -748,7 +707,6 @@ class Game:
                     self.screen.fill(GC.GREEN)
                     self.tile_map.draw(self.screen)
                     self.draw_collectibles()  # Draw collectibles before highlighting
-                    self.draw_highlighted_cells(move_cells=valid_cells)
                     self.draw_highlighted_cells(valid_cells) 
 
                     for event in pygame.event.get():
@@ -891,7 +849,7 @@ def main():
     try:
         pygame.mixer.music.load("music/music.mp3")  
         pygame.mixer.music.play(-1)  
-        pygame.mixer.music.set_volume(0.5) 
+        pygame.mixer.music.set_volume(0) 
     except pygame.error as e:
         print(f"Error loading music: {e}") 
          
