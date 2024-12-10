@@ -502,6 +502,8 @@ class Game:
                 return False
 
             selected_unit.is_selected = True
+            self.game_log.set_selected_unit(selected_unit)
+
             self.redraw_static_elements()  # S'assurer que la grille est bien dessinée
             self.flip_display()  
             has_acted = False
@@ -575,6 +577,7 @@ class Game:
                 else:
                     self.game_log.add_message("No enemies in range.", 'info')
                 selected_unit.is_selected = False
+                self.game_log.set_selected_unit(None)
                 self.flip_display()
                 continue
 
@@ -610,6 +613,7 @@ class Game:
                 self.handle_attack_for_bomber(selected_unit, opponent_units)
 
             selected_unit.is_selected = False  # End unit's turn
+            self.game_log.set_selected_unit(None)
             self.redraw_static_elements()
             self.flip_display()
 
