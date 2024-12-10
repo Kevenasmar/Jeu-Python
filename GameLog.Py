@@ -16,6 +16,7 @@ ABILITY_DESCRIPTIONS = {
     "explode": "Kills itself - massive area damage.",
 }
 
+#Multiples de la attack_power de l'unité correspondante
 ABILITY_DAMAGE = {
     "fire_arrow": 1,  # Equal to the unit's attack power
     "normal_arrow": 1,  # 1x the unit's attack power
@@ -209,6 +210,12 @@ class GameLog:
         for stat in stats:
             stat_surface = self.font.render(stat, True, GC.BLUE)  # Sky blue color
             self.screen.blit(stat_surface, (stats_x, stats_y))
+            stats_y += 30
+            
+        # Add this conditional block for the Mage
+        if unit_name == "Mage":
+            water_ability_surface = self.font.render("Can walk on water!", True, GC.BLUE)
+            self.screen.blit(water_ability_surface, (stats_x, stats_y))
             stats_y += 30
 
         # Add "Abilities" label below the stats

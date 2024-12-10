@@ -131,12 +131,26 @@ def rules_screen(screen, p1_images, p2_images):
     general_rules = [
         "Objective: Defeat all enemy units.",
         "Each turn, you can move and/or attack with your units.",
-        "Units have unique abilities that affect gameplay.",
+        "Each unit can move within a specific speed radius.",
+        "When a unit is selected, the game log will display its different abilities.",
+        "You can only attack if enemies are within an attack's range or in your line of sight.",
+        "Each attack has a unique range and damage intensity,"
+        "so plan your strategy carefully!",
         "May the best player win in glory & honor!"
     ]
-    for rule in general_rules:
-        draw_text(screen, rule, font, (15, 13, 74), (center_x, y))
-        y += 30  
+    
+    for index, rule in enumerate(general_rules):
+        if index == 0:  # First sentence
+            # Render the first rule in bold or a different color
+            bold_font = pygame.font.Font(None, 34)  # Larger font to simulate bold
+            draw_text(screen, rule, bold_font, (0, 0, 0), (center_x, y))  # Black for emphasis
+        elif index == len(general_rules) - 1:  # Last sentence
+            # Render the last rule in red
+            draw_text(screen, rule, font, (255, 0, 0), (center_x, y))
+        else:
+            # Render the rest normally
+            draw_text(screen, rule, font, (15, 13, 74), (center_x, y))
+        y += 30 
 
     # Section Description des Unités
     # Définir 4 colonnes pour chaque unitÑ
@@ -148,38 +162,24 @@ def rules_screen(screen, p1_images, p2_images):
         {
             "name": "Archer",
             "abilities": [
-                "- Normal Arrow:",
-                "Medium-range & damage,",
-                "4% chance of headshot!",
-                " ",
-                "- Fire Arrow:",
-                "Moderate damage",
-                "over time"
+                "Ranged attacker with",
+                "excellent precision."
             ],
             "images": (p1_images[0], p2_images[0])
         },
         {
             "name": "Mage",
             "abilities": [
-                "- Potion:",
-                " Low damage",
-                " ",
-                "- Heal:",
-                "Restores health",
-                "to allies"
+                "Master of elemental",
+                "magic and healer."
             ],
             "images": (p1_images[1], p2_images[1])
         },
         {
             "name": "Giant",
             "abilities": [
-                "- Punch:",
-                "Close-range,",
-                "high-damage.",
-                " ",
-                "- Stomp:",
-                "Pushes enemy back,",
-                "high-damage."
+                "Powerhouse with incredible",
+                "strength and durability."
             ],
             "images": (p1_images[2], p2_images[2])
         },
@@ -187,16 +187,13 @@ def rules_screen(screen, p1_images, p2_images):
         {
             "name": "Bomber",
             "abilities": [
-                "- Bomb Throw:",
-                "Medium-range,",
-                "explosive attack",
-                "also affects allies"
-                "    ",
-                "- Explodes:",
-                "Kills the bomber",
-                "Deals massive damage",
-                "within range",
-                "also affects allies"
+                "Explosive fighter",
+                "requiring careful",
+                "planning to avoid",
+                "self-damage.",
+                "CAREFUL...",
+                "The Bomber can",
+                "hurt allies too."
             ],
             "images": (p1_images[3], p2_images[3])  # Placeholder for Bomber images
         }
