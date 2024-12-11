@@ -16,13 +16,17 @@ Voici les principaux fichiers et leur rôle dans le projet:
     
 - ## **Fonctionnalités:** 
 1. #### **Déplacement et Combat:**
-Les unités peuvent se déplacer sur une grille et attaquer en fonction de leurs portées et compétences spécifiques.   
+Les unités peuvent se déplacer sur une grille et attaquer en fonction de leurs portées et compétences spécifiques. À chaque tour, le joueur peut déplacer son unité et/ou exécuter une compétence. Une unité ne peut attaquer qu'à condition qu'un ennemi soit situé dans sa ligne de vue (sans obstacle bloquant) et dans la portée d'attaque de la compétence utilisée.
 
 2. #### **Carte Générée Procéduralement:** 
 Les cartes sont générées aléatoirement avec différents types de terrains, influencés par des poids configurables.
 
 3. #### **Types de Héros:**  
-**Archer**: Attaque à distance avec des flèches normales et enflammées. La flèche normale a une probabilité de Headshot (mort instantanée) de 4%.  
+**Archer**: Attaque à distance avec des flèches normales et enflammées. La flèche normale a une probabilité de Headshot (mort instantanée) de 10%.  
 **Mage**: Peut marcher sur l'eau, soigner des alliés, et lancer des potions magiques.  
 **Géant**: Inflige des dégâts importants avec des coups de poing ou des "stomps".  
 **Bomber**: Lance une bombe ou sacrifie sa vie pour infliger des dégâts massifs en explosant.  
+
+4. #### **Objets collectables**
+Deux types de potions (jaunes et bleues) apparaissent aléatoirement sur la Map au cours du jeu et apparaissent aléatoirement sur la carte au cours du jeu et produisent un effet sur l'unité qui les récupère, pour une durée d’un tour.
+**Potion Jaune**: Augmente temporairement le pouvoir dattaque de l'unitéAugmente temporairement la vitesse de déplacement de l'unité.
