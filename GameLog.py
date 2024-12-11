@@ -97,7 +97,7 @@ class GameLog:
                             damage_text = f"{actual_damage}"
                         elif damage_multiplier < 0:
                             actual_damage = abs(unit.attack_power * damage_multiplier)
-                            damage_text = f"Restores {actual_damage} life points"
+                            damage_text = f"+{actual_damage} LPs"
                         else:
                             damage_text = "No damage information available."
 

@@ -7,12 +7,13 @@ from constante import GameConstantes as GC
 from configureWorld import*
 from World_Drawer import *
 from world import*
-from GameLog import * # type: ignore
-from menu import *  # Import menu functions
+from GameLog import * 
+from menu import *  
 from collectible_items import *
-# Setup tiles
+
+
 tiles_kind = [
-    SandTile(),  # False veut dire que la case n'est pas solide tu peux marcher
+    SandTile(),  # False veut dire que la case est praticable
     RockTile(),
     WaterTile()
 ]
@@ -24,6 +25,8 @@ class Game:
         self.screen = screen
         self.game_log = GameLog(500, GC.HEIGHT, GC.WIDTH, 0, self.screen)
         self.tile_map = Map_Aleatoire(tile_map, TERRAIN_TILES, GC.CELL_SIZE)
+        
+        '''Initialisation des deux équipes'''
         self.player_units_p1 = [ 
            #(x, y, points de vie, attaque, défense, vitesse, image, équipe)
             Archer(0, 0, GC.ARCHER_HP, GC.ARCHER_ATK, GC.ARCHER_DEF, GC.ARCHER_SPEED, 'Photos/archer.png', 'player'),
@@ -38,135 +41,15 @@ class Game:
             Giant(2, 0,GC.GIANT_HP, GC.GIANT_ATK, GC.GIANT_DEF, GC.GIANT_SPEED,'Photos/enemy_giant.png', 'enemy'),
             Bomber(3, 0, GC.BOMBER_HP, GC.BOMBER_ATK, GC.BOMBER_DEF, GC.BOMBER_SPEED, 'Photos/enemy_bomber.png', 'enemy')
         ]
-        # Initialize spawn for bomber units as well
+        
+        # Apparition aléatoire des unitées
         self.spawn_units()
         
         self.walkable_tiles = self.inititialize_walkable_tiles()
         self.collectible_spawn_timer = 0
-        self.spawn_interval = 2  # Seconds between spawns
+        self.spawn_interval = 2 
         self.collectible_items = []
         self.collectible_templates = self.initialize_collectibles(tile_map)
-
-    #-------------------Collectibles Logic------------#
-    def initialize_collectibles(self, tile_map):
-        
-        # Create effects
-        effects = {
-            "health": Effect("health", "soundeffects/apply_effect.wav"),
-            "speed": Effect("speed", "soundeffects/apply_effect.wav"),
-            "damage": Effect("damage", "soundeffects/apply_effect.wav")
-        }
-        
-        # Create and return collectible templates
-        return {
-            "speed": lambda: CollectibleItem(
-                effects["speed"],
-                'image/speed_potion.png',
-                "soundeffects/apply_effect.wav",
-                120,
-                tile_map,
-                self.game_log
-            ),
-            "damage": lambda: CollectibleItem(
-                effects["damage"],
-                'image/power_buff.png',
-                "soundeffects/apply_effect.wav",
-                120,
-                tile_map,
-                self.game_log)
-            }
-    """,
-            "health": lambda: CollectibleItem(
-                effects["health"],
-                'image/health_potion.png',
-                "soundeffects/apply_effect.wav",
-                120,
-                tile_map,
-                self.game_log
-            "damage": lambda: CollectibleItem(
-                effects["damage"],
-                'image/power_buff.png',
-                "soundeffects/apply_effect.wav",
-                120,
-                tile_map,
-                self.game_log
-            )"""
-
-    def spawn_collectible(self):
-        print("Spawning collectible...")
-        # Choose a random collectible type
-        collectible_type = random.choice(list(self.collectible_templates.keys()))
-        new_collectible = self.collectible_templates[collectible_type]()
-        max_items_shown = 3
-        activated_items = 0 
-        for item in self.collectible_items : 
-            if item.is_active : 
-                activated_items += 1 
-        
-        if activated_items >= max_items_shown :
-            return 
-        # Find a valid spawn location
-        walkable_tiles = []
-        for x in range(GC.WORLD_X):
-            for y in range(GC.WORLD_Y):
-                if self.tile_map.is_walkable(x, y):
-                    # Check if location is not too close to any player
-                    too_close = False
-                    for unit in self.player_units_p1 + self.player_units_p2:
-                        if abs(unit.x - x * GC.CELL_SIZE) < GC.CELL_SIZE * 3 and \
-                        abs(unit.y - y * GC.CELL_SIZE) < GC.CELL_SIZE * 3:
-                            too_close = True
-                            break
-                    if not too_close:
-                        walkable_tiles.append((x, y))
-        print(f"Found {len(walkable_tiles)} walkable tiles.")
-        if walkable_tiles:
-            spawn_x, spawn_y = random.choice(walkable_tiles)
-            new_collectible.x = spawn_x 
-            new_collectible.y = spawn_y 
-            self.collectible_items.append(new_collectible)
-            self.game_log.add_message("Collectible spawned", 'other')
-            print("Collectible are spawned at", spawn_x, spawn_y)
-        else : 
-            print('No walkable tile found for collectible!')
-        
-    def update_collectibles(self, delta_time):
-        self.collectible_spawn_timer += delta_time
-        if self.collectible_spawn_timer >= self.spawn_interval:
-            self.spawn_collectible()
-            self.collectible_spawn_timer = 0
-
-        for item in self.collectible_items:
-            item.update(delta_time)  # Handle respawn logic
-            if item.is_active:
-                for unit in self.player_units_p1 + self.player_units_p2:
-                    item.collect(unit)
-    """"def update_collectibles(self, delta_time):
-        # Update spawn timer
-        self.collectible_spawn_timer += delta_time
-        #Spawn new collectible if timer exceeds interval
-        if self.collectible_spawn_timer >= self.spawn_interval:
-            self.spawn_collectible()
-            self.collectible_spawn_timer = 0  # Reset timer
-
-        
-        # Update existing collectibles
-        for item in self.collectible_items[:]:  # Create a copy of the list to modify it safely
-            item.update(delta_time)
-            # Check collection for all units
-            for unit in self.player_units_p1 + self.player_units_p2:
-                item.collect(unit)
-            
-            # Remove inactive items that have exceeded their respawn time
-            if not item.is_active and item.respawn_counter >= item.respawn_time:
-                self.collectible_items.remove(item)
-"""
-    def draw_collectibles(self):
-        for item in self.collectible_items:
-            if item.is_active:
-                self.screen.blit(item.image, (item.x * GC.CELL_SIZE, item.y * GC.CELL_SIZE))
-    
-    #----------End of this part----------------------#    
 
     '''--------S'assurer que les unités n'apparaissent pas sur des cases non praticables------------''' 
     def inititialize_walkable_tiles(self) :
@@ -232,6 +115,93 @@ class Game:
         self.game_log.draw()
 
 
+    '''-----------------------Objets Ramassables------------------------------------'''
+    def initialize_collectibles(self, tile_map):
+        
+        # Effet son
+        effects = {
+            "health": Effect("health", "soundeffects/apply_effect.wav"),
+            "speed": Effect("speed", "soundeffects/apply_effect.wav"),
+            "damage": Effect("damage", "soundeffects/apply_effect.wav")
+        }
+        
+        # Créer et retourner les templates des objets
+        return {
+            "speed": lambda: CollectibleItem(
+                effects["speed"],
+                'image/speed_potion.png',
+                "soundeffects/apply_effect.wav",
+                120,
+                tile_map,
+                self.game_log
+            ),
+            "damage": lambda: CollectibleItem(
+                effects["damage"],
+                'image/power_buff.png',
+                "soundeffects/apply_effect.wav",
+                120,
+                tile_map,
+                self.game_log)
+            }
+
+    '''Apparition aléatoire des objets'''
+    def spawn_collectible(self):
+        print("Spawning collectible...")
+        # Choisir un objet aléatoirement 
+        collectible_type = random.choice(list(self.collectible_templates.keys()))
+        new_collectible = self.collectible_templates[collectible_type]()
+        max_items_shown = 3
+        activated_items = 0 
+        for item in self.collectible_items : 
+            if item.is_active : 
+                activated_items += 1 
+        
+        if activated_items >= max_items_shown :
+            return 
+        
+        # Trouver une position valide pour l'apparition
+        walkable_tiles = []
+        for x in range(GC.WORLD_X):
+            for y in range(GC.WORLD_Y):
+                if self.tile_map.is_walkable(x, y):
+                    # Vérifier que la position ne soit pas trop proche d'une unité
+                    too_close = False
+                    for unit in self.player_units_p1 + self.player_units_p2:
+                        if abs(unit.x - x * GC.CELL_SIZE) < GC.CELL_SIZE * 3 and \
+                        abs(unit.y - y * GC.CELL_SIZE) < GC.CELL_SIZE * 3:
+                            too_close = True
+                            break
+                    if not too_close:
+                        walkable_tiles.append((x, y))
+        print(f"Found {len(walkable_tiles)} walkable tiles.")
+        if walkable_tiles:
+            spawn_x, spawn_y = random.choice(walkable_tiles)
+            new_collectible.x = spawn_x 
+            new_collectible.y = spawn_y 
+            self.collectible_items.append(new_collectible)
+            self.game_log.add_message("Collectible spawned", 'other')
+            print("Collectible are spawned at", spawn_x, spawn_y)
+        else : 
+            print('No walkable tile found for collectible!')
+        
+    def update_collectibles(self, delta_time):
+        self.collectible_spawn_timer += delta_time
+        if self.collectible_spawn_timer >= self.spawn_interval:
+            self.spawn_collectible()
+            self.collectible_spawn_timer = 0
+
+        for item in self.collectible_items:
+            item.update(delta_time)  # Handle respawn logic
+            if item.is_active:
+                for unit in self.player_units_p1 + self.player_units_p2:
+                    item.collect(unit)
+
+    def draw_collectibles(self):
+        for item in self.collectible_items:
+            if item.is_active:
+                self.screen.blit(item.image, (item.x * GC.CELL_SIZE, item.y * GC.CELL_SIZE))
+
+
     '''------------------Utilitaires, affichage et déplacement-----------------------'''
   
     def calculate_valid_cells(self, unit):
@@ -267,12 +237,12 @@ class Game:
         err = dx - dy
 
         while True:
-            # Check if the tile at (x0, y0) is a wall
+            # Vérifie si la case (x0, y0) est un mur)
             tile = self.tile_map.terrain_tiles[self.tile_map.terrain_data[y0][x0]]
-            if isinstance(tile, UnwalkableTile) and not isinstance(tile, WaterTile):  # Only walls block LoS
+            if isinstance(tile, UnwalkableTile) and not isinstance(tile, WaterTile):  # LoS bloquée par les murs 
                 return False
 
-            if (x0, y0) == (x1, y1):  # Reached the target
+            if (x0, y0) == (x1, y1):  # Atteint la cible
                 return True
 
             e2 = 2 * err
@@ -436,13 +406,11 @@ class Game:
         """
         valid_attacks = {}
 
-        # Punch attack
         if giant.punch_range:
             valid_targets = self.calculate_valid_attack_cells(giant, giant.punch_range, opponent_units)
             if valid_targets:
                 valid_attacks["Punch"] = (giant.punch, valid_targets)
 
-        # Stomp attack
         if giant.stomp_range:
             valid_targets = self.calculate_valid_attack_cells(giant, giant.stomp_range, opponent_units)
             if valid_targets:
@@ -451,7 +419,6 @@ class Game:
                 valid_attacks["Stomp"] = (stomp_, valid_targets)
     
         self.perform_attack(giant, valid_attacks, opponent_units)
-
 
     def handle_attack_for_bomber(self, bomber, opponent_units):
         valid_attacks = {}
@@ -631,9 +598,6 @@ class Game:
 
     '''----------------------------Logique de Jeu--------------------------------------'''
 
-
-
-
     def handle_player_turn(self, player_name, opponent_units, ally_units, delta_time):
         '''Cette fonction gère le tour du joueur, inclus le mouvement et les attaques'''
         self.game_log.add_message(f"{player_name}'s turn", 'other')
@@ -657,6 +621,7 @@ class Game:
             # Demander au joueur s'il veut bouger l'unité selectionnée 
             self.game_log.add_message(f"{selected_unit.__class__.__name__}'s turn. Move? (y/n)", 'mouvement')
             self.game_log.draw()
+            pygame.display.flip()
             moving = None
             while moving is None:
                 for event in pygame.event.get():
@@ -713,7 +678,6 @@ class Game:
                                 if valid_targets:
                                     valid_attacks["Throw Bomb"] = valid_targets
 
-            # Skip attack phase if no valid attacks
             if not valid_attacks:
                 if any(selected_unit._in_range(opponent, attack_range) for opponent in opponent_units for attack_range in selected_unit.ranges):
                     self.game_log.add_message("Enemies in range but out of sight!", 'info')
@@ -724,7 +688,7 @@ class Game:
                 self.flip_display()
                 continue
 
-            # Ask if the player wants to attack
+            # Demander au joueur s'il veut attaquer
             self.game_log.add_message(f"{selected_unit.__class__.__name__}'s turn. Attack? (y/n)", 'attack')
             self.game_log.draw()
             pygame.display.flip()
@@ -743,9 +707,9 @@ class Game:
                             selected_unit.is_selected = False
 
             if not attacking:
-                continue  # Skip to the next unit
+                continue  # Prochaine unité
 
-            # Call the appropriate attack handler
+            # Appeler la fonction d'attaque correspondante
             if isinstance(selected_unit, Archer):
                 self.handle_attack_for_archer(selected_unit, opponent_units)
             elif isinstance(selected_unit, Giant):
@@ -755,7 +719,7 @@ class Game:
             elif isinstance(selected_unit, Bomber):
                 self.handle_attack_for_bomber(selected_unit, opponent_units)
 
-            selected_unit.is_selected = False  # End unit's turn
+            selected_unit.is_selected = False  # Fin du tour de l'unité
             self.game_log.set_selected_unit(None)
             self.redraw_static_elements()
             self.flip_display()
@@ -764,51 +728,17 @@ class Game:
         print(GC.turn_number)
         print('turn finished')
         
-
     def revert_player_effects(self, units):
-        # Revert all effects for all units in the given list
+        # Annuler tous les effets pour toutes les unités de la liste donnée.
         for unit in units:
            if hasattr(unit, 'active_effects'):
             remaining_effects = []
             for effect in unit.active_effects:
                 if effect.applied_turn < GC.turn_number:
-                    print(f"DEBUG: Attempting to revert effect '{effect.effect_type}' on unit {unit}. "
-                          f"Applied turn: {effect.applied_turn}, Current turn: {GC.turn_number}.")
                     effect.revert(unit)
-                    if not effect.is_active:
-                        print(f"DEBUG: Effect '{effect.effect_type}' successfully reverted from unit {unit}.")
-                    else:
-                        print(f"DEBUG: Effect '{effect.effect_type}' failed to revert for some reason.")
                 else:
-                    # This effect was applied this turn, keep it for the next turn
-                    print(f"DEBUG: Keeping effect '{effect.effect_type}' on unit {unit}. "
-                          f"Applied turn: {effect.applied_turn}, Current turn: {GC.turn_number}.")
                     remaining_effects.append(effect)
             unit.active_effects = remaining_effects
-
-    def handle_enemy_turn(self):
-        #Simple AI for the enemy's turn
-        for enemy in self.enemy_units:
-            if self.check_game_over():
-                return
-
-            target = random.choice(self.player_units)
-            dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
-            dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
-            new_x = enemy.x + dx
-            new_y = enemy.y + dy
-
-            if abs(new_x - enemy.x) + abs(new_y - enemy.y) <= enemy.speed and self.tile_map.is_walkable(new_x, new_y):
-                enemy.move(new_x, new_y)
-                self.game_log.add_message('Enemy moved', 'mouvement')
-
-            if abs(enemy.x - target.x) <= enemy.ranges and abs(enemy.y - target.y) <= enemy.ranges:
-                enemy.attack(target)
-                self.game_log.add_message(f"{enemy.__class__.__name__} attacked {target.__class__.__name__}!", 'attack')
-                if target.health <= 0:
-                    self.player_units.remove(target)
-                    self.game_log.add_message(f"{target.__class__.__name__} was defeated!", 'lose')
-        self.game_log.draw()
    
     def check_game_over(self):
         """Vérifie si la partie est terminée et affiche le joueur gagnant."""
@@ -819,17 +749,6 @@ class Game:
             self.game_log.add_message('Player 1 wins!', 'win')
             return True
         return False
-
-    def display_game_over(self, message):
-        """Affiche un message de fin de partie et ferme le jeu"""
-        font = pygame.font.Font(None, 72)
-        game_over_surface = font.render(message, True, (255, 0, 0))  # Assuming RED is defined
-        game_over_rect = game_over_surface.get_rect(center=(GC.WIDTH // 2, GC.HEIGHT // 2))
-        self.screen.blit(game_over_surface, game_over_rect)
-        pygame.display.flip()
-        pygame.time.wait(3000)  # Pause for 3 seconds
-        pygame.quit()
-        exit()
 
 
     '''------------------Boucle Main-----------------------------------------------------------'''
@@ -851,7 +770,7 @@ def main():
     screen = pygame.display.set_mode((GC.WIDTH + 500, GC.HEIGHT), pygame.SRCALPHA)
     pygame.display.set_caption("Rise of Heroes")
 
-    rematch = False  # Suivre si le joueur veut une revanche.
+    rematch = False  # Suivre si le joueur veut une revanche
     last_time = pygame.time.get_ticks()
     while True:  # Boucle principale 
         if not rematch:
@@ -863,11 +782,8 @@ def main():
 
         if action == "play":
             # Lancer le jeu
-            random_seed = random.randint(0, 1000)  # Utiliser une graine aléatoire pour la génération de la carte
-            WEIGHTS = [25, 40, 10, 40, 10, 10]  # TERRAIN_TILES poids
-            # Directly start the game
-            random_seed = random.randint(0, 1000)  # Use a random seed for map generation
-            WEIGHTS = [25, 50, 10, 50, 10, 10]  # TERRAIN_TILES weights
+            random_seed = random.randint(0, 1000)  
+            WEIGHTS = [25, 50, 10, 50, 10, 10]  # TERRAIN_TILES poids
             world = World(GC.WORLD_X, GC.WORLD_Y, random_seed)
             tile_map = world.get_tiled_map(WEIGHTS)
 
@@ -882,7 +798,7 @@ def main():
                 delta_time = (current_time - last_time) / 1000.0  # Convert to seconds
                 last_time = current_time
                 game.redraw_static_elements()  # Dessine la map et l'état initial
-                game.update_collectibles(delta_time)  # Update collectibles
+                game.update_collectibles(delta_time)  # Mise a jour des objets ramassables
                 
                 # Tour du Joueur 1
                 game.handle_player_turn("Player 1", game.player_units_p2, game.player_units_p1, delta_time)
