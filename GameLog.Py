@@ -111,12 +111,6 @@ class GameLog:
             # Assign detected abilities to the unit
             setattr(unit, "abilities", abilities)
 
-            # Debug: Print detected abilities with descriptions and damage
-            for ability in abilities:
-                print(
-                    f"Detected Ability: {ability['name']}, Range: {ability['range']}, "
-                    f"Description: {ability['description']}, Damage: {ability['damage']}"
-                )
 
 
 
