@@ -133,11 +133,18 @@ class Giant(Unit):
         self.stomp_range = 2 
         self.ranges = [self.punch_range, self.stomp_range]
 
+    def is_occupied(self, x, y, units):
+        """
+        Vérifier si la case (x, y) est occupée par une unité.
+        units: liste de toutes les unités dans le jeu.
+        """
+        return any(unit.x == x and unit.y == y for unit in units)
+
     def punch(self, target):
         """Inflige des dégâts importants à la cible."""
         target.health -= self.attack_power * 2  # Dégâts élevés
 
-    def stomp(self, target, tile_map):
+    def stomp(self, target, tile_map, units):
         """Inflict heavy damage and knock back the target. Finds an alternative
         valid tile if the initial knockback position is non-walkable.
         """
@@ -158,7 +165,7 @@ class Giant(Unit):
         new_y = target.y + dy
 
         # Check if the new position is within bounds and walkable
-        if 0 <= new_x < GC.GRID_SIZE and 0 <= new_y < GC.GRID_SIZE and tile_map.is_walkable(new_x, new_y, target):
+        if 0 <= new_x < GC.GRID_SIZE and 0 <= new_y < GC.GRID_SIZE and tile_map.is_walkable(new_x, new_y, target) and not self.is_occupied(new_x,new_y,units):
             target.x, target.y = new_x, new_y
         else:
             # Collect adjacent valid tiles excluding the Giant's position
