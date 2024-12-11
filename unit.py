@@ -54,7 +54,7 @@ class Unit:
         self.image = pygame.transform.scale(self.image, (int( GC.CELL_SIZE), int( GC.CELL_SIZE)))  # Échelle de l'image
         self.team = team  # 'player' ou 'enemy'
         self.is_selected = False
-
+        self.active_effects = []
     def get_position(self) : 
         return (self.x, self.y)
 

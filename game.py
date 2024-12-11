@@ -76,7 +76,14 @@ class Game:
                 120,
                 tile_map,
                 self.game_log
-            )
+            ),
+            "damage": lambda: CollectibleItem(
+                effects["damage"],
+                'image/power_buff.png',
+                "soundeffects/apply_effect.wav",
+                120,
+                tile_map,
+                self.game_log)
             }
     """,
             "health": lambda: CollectibleItem(
@@ -100,7 +107,14 @@ class Game:
         # Choose a random collectible type
         collectible_type = random.choice(list(self.collectible_templates.keys()))
         new_collectible = self.collectible_templates[collectible_type]()
+        max_items_shown = 3
+        activated_items = 0 
+        for item in self.collectible_items : 
+            if item.is_active : 
+                activated_items += 1 
         
+        if activated_items >= max_items_shown :
+            return 
         # Find a valid spawn location
         walkable_tiles = []
         for x in range(GC.WORLD_X):
@@ -652,6 +666,7 @@ class Game:
         """Handle the player's turn, including movement and attacks."""
         print(f"{player_name}'s turn started")
         self.game_log.add_message(f"{player_name}'s turn", 'other')
+        current_player_units = self.player_units_p1 if player_name == "Player 1" else self.player_units_p2
         for selected_unit in (self.player_units_p1 if player_name == "Player 1" else self.player_units_p2):
             if self.check_game_over():
                 return False
@@ -771,7 +786,32 @@ class Game:
                 selected_unit.is_selected = False  # Deselect the unit
                 self.flip_display()
                 continue
+        self.revert_player_effects(current_player_units)
+        GC.turn_number += 1 
+        print(GC.turn_number)
+        print('turn finished')
+        
 
+    def revert_player_effects(self, units):
+        # Revert all effects for all units in the given list
+        for unit in units:
+           if hasattr(unit, 'active_effects'):
+            remaining_effects = []
+            for effect in unit.active_effects:
+                if effect.applied_turn < GC.turn_number:
+                    print(f"DEBUG: Attempting to revert effect '{effect.effect_type}' on unit {unit}. "
+                          f"Applied turn: {effect.applied_turn}, Current turn: {GC.turn_number}.")
+                    effect.revert(unit)
+                    if not effect.is_active:
+                        print(f"DEBUG: Effect '{effect.effect_type}' successfully reverted from unit {unit}.")
+                    else:
+                        print(f"DEBUG: Effect '{effect.effect_type}' failed to revert for some reason.")
+                else:
+                    # This effect was applied this turn, keep it for the next turn
+                    print(f"DEBUG: Keeping effect '{effect.effect_type}' on unit {unit}. "
+                          f"Applied turn: {effect.applied_turn}, Current turn: {GC.turn_number}.")
+                    remaining_effects.append(effect)
+            unit.active_effects = remaining_effects
 
     def handle_enemy_turn(self):
         #Simple AI for the enemy's turn

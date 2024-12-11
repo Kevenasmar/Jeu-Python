@@ -7,18 +7,15 @@ from world import *
 import random
 from GameLog import *
 class Effect : 
-    def __init__(self, effect_type, sound_path) : 
+    def __init__(self, effect_type, sound_path):
         self.effect_type = effect_type
         self.sound = mixer.Sound(sound_path)
+        self.is_active = False
+        self.value_changed = 0
+        self.applied_turn = None  # Store when this effect was applied
 
-    def apply(self, unit) : 
-        if self.effect_type == "health" :
-            unit.max_health = max(unit.health)
-            if unit.health < unit.max_health :
-                unit.health += 10
-                self.sound.play()
-    
-        elif self.effect_type == "speed":
+    def apply(self, unit):
+        if self.effect_type == "speed":
             speed_buff_amount = 3
             current_position = unit.get_position() 
             distance_to_the_left = current_position[0]
@@ -28,11 +25,31 @@ class Effect :
             min_distance = min(distance_to_the_left, distance_to_the_right, distance_to_the_top, distance_to_the_bottom)
             effective_speed_buff = min(min_distance, speed_buff_amount)
             unit.speed += effective_speed_buff
+            self.value_changed = effective_speed_buff
+            self.is_active = True
             self.sound.play()
-    
+
         elif self.effect_type == "damage":
-            unit.damage += 5
+            increase_amount = 5
+            unit.attack_power += increase_amount
+            self.value_changed = increase_amount
+            self.is_active = True
             self.sound.play()
+        self.applied_turn = GC.turn_number
+    def revert(self, unit):
+        if not self.is_active:
+            return
+
+        if self.effect_type == "speed":
+            unit.speed = max(unit.speed - self.value_changed, 0)
+
+        elif self.effect_type == "damage":
+            unit.attack_power = max(unit.attack_power - self.value_changed, 0)
+
+        self.is_active = False
+        self.value_changed = 0
+        self.applied_turn = None
+
 
  
 class CollectibleItem:
@@ -49,7 +66,7 @@ class CollectibleItem:
         self.x = 0
         self.y = 0
         self.game_log = game_log
-    
+
     def update(self, delta_time):
         if not self.is_active:
             self.respawn_counter += delta_time
@@ -72,8 +89,15 @@ class CollectibleItem:
         # Check if unit is on the same cell as the collectible
         if self.is_active and unit.x == self.x and unit.y == self.y:
             print("DEBUG: Item collected!")
-            # They are on the same tile
             self.effect.apply(unit)
+            self.game_log.add_message("Collectible collected", 'other')
+            self.effect.applied_turn = GC.turn_number
+            if not hasattr(unit, 'active_effects'):
+                unit.active_effects = []
+            
+            if self.effect.is_active:
+                unit.active_effects.append(self.effect)
+                print(f"DEBUG: Effect '{self.effect.effect_type}' applied to unit {unit}. Current active effects: {[e.effect_type for e in unit.active_effects]}")
             self.sound.play()
             self.is_active = False
             self.respawn_counter = 0

@@ -4,7 +4,7 @@ class GameConstantes :
 
     GRID_SIZE = 14
     CELL_SIZE = 40
-
+    turn_number = 0
     
     WIDTH = GRID_SIZE * CELL_SIZE
     HEIGHT = GRID_SIZE * CELL_SIZE
