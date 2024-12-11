@@ -105,7 +105,7 @@ class Archer(Unit):
 
     def normal_arrow(self, target):
         """Flèche normale avec possibilité de mort instantanée. Le Headshot est géré dans le fichier game.py."""
-        target.health -= self.attack_power
+        target.health -= self.attack_power - target.defense
 
     def fire_arrow(self, target):
         """Flèche en feu, applique des effets de dégâts sur la durée (Damage Over Time DoT)."""
@@ -142,13 +142,13 @@ class Giant(Unit):
 
     def punch(self, target):
         """Inflige des dégâts importants à la cible."""
-        target.health -= self.attack_power * 2  # Dégâts élevés
+        target.health -= self.attack_power * 2 - target.defense  # Dégâts élevés
 
     def stomp(self, target, tile_map, units):
         """Inflict heavy damage and knock back the target. Finds an alternative
         valid tile if the initial knockback position is non-walkable.
         """
-        target.health -= self.attack_power * 3  # Very high damage
+        target.health -= self.attack_power * 3 - target.defense  # Very high damage
 
         # Determine the knockback direction
         dx = target.x - self.x
@@ -198,14 +198,17 @@ class Mage(Unit):
         
     def potion(self, target):
         """Jette une potion magique"""
-        target.health -= self.attack_power  # Dégâts faibles
+        target.health -= self.attack_power - target.defense  # Dégâts faibles
 
     def heal_allies(self, target):
         """Soigne une unité alliée."""
         if target.team == self.team:  # Only heal allies
             target.health += self.attack_power
             target.health = min(target.health, 100)  # Cap health at 100
-        else:
+            if target.name == 'Giant':
+                target.health = min(target.health, 125)
+            if target.name == 'Mage':
+                target.health = min(target.health, 75)
             print(f"Cannot heal {target.__class__.__name__}, they are not an ally!")
 
 
@@ -236,7 +239,7 @@ class Bomber(Unit):
         for unit in affected_units:
             # Appliquer le dégât 
             damage = self.attack_power  
-            unit.health -= damage
+            unit.health -= damage - target.defense
 
             # Vérifier si les points de vie de l'unité deviennent nuls
             if unit.health <= 0:
