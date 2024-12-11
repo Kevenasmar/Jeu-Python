@@ -98,6 +98,16 @@ class Unit:
         # Draw the foreground (green) health bar
         pygame.draw.rect(screen, GC.GREEN, (bar_x, green_bar_y, bar_width, current_health_height))
 
+    def load_sound_effect(self, sound_path):
+        """Load and play a sound effect without interrupting the background music."""
+        try:
+            # Load the sound effect
+            sound_effect = pygame.mixer.Sound(sound_path)
+            sound_effect.set_volume(0.7)  # Set volume for the sound effect
+            sound_effect.play()  # Play the sound effect once
+        except pygame.error as e:
+            print(f"Error loading sound effect: {e}")
+        
 
 
 '''--------------------------Les Différents Types d'unité et leurs Compétences-----------------------------------'''
@@ -118,6 +128,8 @@ class Archer(Unit):
     def normal_arrow(self, target):
         """Flèche normale avec possibilité de mort instantanée. Le Headshot est géré dans le fichier game.py."""
         target.health -= self.attack_power - target.defense
+        super().load_sound_effect("music/arrow_sound.mp3")
+
 
     def fire_arrow(self, target):
         """Flèche en feu, applique des effets de dégâts sur la durée (Damage Over Time DoT)."""
@@ -125,6 +137,7 @@ class Archer(Unit):
         dot_damage = self.attack_power - target.defense
         target.health -= initial_damage 
         self.dot_targets[target] = {'damage': dot_damage, 'turns': 3}
+        super().load_sound_effect("music/firearrow_sound.mp3")
 
     def apply_dot(self):
         """Applique le DoT sur les ennemis affectés."""
@@ -156,12 +169,14 @@ class Giant(Unit):
     def punch(self, target):
         """Inflige des dégâts importants à la cible."""
         target.health -= self.attack_power - target.defense  # Dégâts élevés
+        super().load_sound_effect("music/punch_sound.mp3")  
 
     def stomp(self, target, tile_map, units):
         """Inflict heavy damage and knock back the target. Finds an alternative
         valid tile if the initial knockback position is non-walkable.
         """
         target.health -= self.attack_power * 2 - target.defense  # Very high damage
+        super().load_sound_effect("music/stomp_sound.mp3")
 
         # Determine the knockback direction
         dx = target.x - self.x
@@ -213,9 +228,11 @@ class Mage(Unit):
     def potion(self, target):
         """Jette une potion magique"""
         target.health -= self.attack_power - target.defense  # Dégâts faibles
+        super().load_sound_effect("music/potion_sound.mp3")
 
     def heal_allies(self, target):
         """Soigne une unité alliée."""
+        super().load_sound_effect("music/heal_sound.mp3")
         if target.team == self.team:  # Only heal allies
             target.health += self.attack_power * 2
             target.health = min(target.health, 100)  # Cap health at 100
@@ -254,6 +271,7 @@ class Bomber(Unit):
             # Appliquer le dégât 
             damage = self.attack_power  
             unit.health -= damage - target.defense
+            super().load_sound_effect("music/bomb_sound.mp3")
 
             # Vérifier si les points de vie de l'unité deviennent nuls
             if unit.health <= 0:
@@ -339,7 +357,8 @@ class Bomber(Unit):
             distance = abs(unit.x - self.x) + abs(unit.y - self.y)
             if distance <= self.explode_range:
                 targets.append(unit)
-                unit.health -= (self.attack_power*3 - unit.defense)  
+                unit.health -= (self.attack_power*3 - unit.defense) 
+                super().load_sound_effect("music/explode_sound.mp3") 
                 if unit.health <= 0:
                     unit.health = 0  
 
