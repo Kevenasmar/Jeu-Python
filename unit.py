@@ -29,14 +29,13 @@ class Unit:
         Si l'unité est sélectionnée ou non.
     """
 
-    def __init__(self, x, y, health, attack_power, defense, speed, vision, image_path, team):
+    def __init__(self, x, y, health, attack_power, defense, speed, image_path, team):
         self.x = x
         self.y = y
         self.health = health
         self.attack_power = attack_power
         self.defense = defense
         self.speed = speed
-        self.vision = vision
         self.image = pygame.image.load(image_path).convert_alpha()  # Chargement de l'image
         self.image = pygame.transform.scale(self.image, (int( GC.CELL_SIZE), int( GC.CELL_SIZE)))  # Échelle de l'image
         self.team = team  # 'player' ou 'enemy'
@@ -95,8 +94,8 @@ class Unit:
 '''L'Archer'''
 
 class Archer(Unit):
-    def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
-        super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
+    def __init__(self, x, y, health, attack, defense, speed, image_path, team):
+        super().__init__(x, y, health, attack, defense, speed, image_path, team)
         self.dot_targets = {}  # Suivre les unités affectées par la flèche en feu
         #Portées d'attaque
         self.normal_arrow_range = 3
@@ -127,8 +126,8 @@ class Archer(Unit):
 '''Le Géant'''
 
 class Giant(Unit):
-    def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
-        super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
+    def __init__(self, x, y, health, attack, defense, speed, image_path, team):
+        super().__init__(x, y, health, attack, defense, speed, image_path, team)
         self.punch_range = 1
         self.stomp_range = 2 
         self.ranges = [self.punch_range, self.stomp_range]
@@ -189,8 +188,8 @@ class Giant(Unit):
 '''Le Mage'''
 
 class Mage(Unit):
-    def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
-        super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
+    def __init__(self, x, y, health, attack, defense, speed, image_path, team):
+        super().__init__(x, y, health, attack, defense, speed, image_path, team)
         self.can_walk_on_water = True
         self.heal_range = 1
         self.potion_range = 6
@@ -215,8 +214,8 @@ class Mage(Unit):
 '''Le Bomber'''
 
 class Bomber(Unit):
-    def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
-        super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
+    def __init__(self, x, y, health, attack, defense, speed, image_path, team):
+        super().__init__(x, y, health, attack, defense, speed, image_path, team)
         self.bomb_range = 2  
         self.explode_range = 5
         self.ranges = [self.bomb_range, self.explode_range]  

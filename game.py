@@ -25,18 +25,18 @@ class Game:
         self.game_log = GameLog(500, GC.HEIGHT, GC.WIDTH, 0, self.screen)
 
         self.player_units_p1 = [ 
-           #(x, y, points de vie, statistique d'attaque, statistique de défense, vitesse, vision, image, équipe)
-            Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/archer.png', 'player'),
-            Mage(1, 0, 100, 3, 1, 4, 2, 'Photos/mage.png', 'player'),
-            Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/giant.png', 'player'),
-            Bomber(3, 0, 100, 7, 1, 4, 2, 'Photos/bomber.png', 'player')
+           #(x, y, points de vie, statistique d'attaque, statistique de défense, vitesse, image, équipe)
+            Archer(0, 0, 100, 5, 2, 5, 'Photos/archer.png', 'player'),
+            Mage(1, 0, 100, 3, 1, 4, 'Photos/mage.png', 'player'),
+            Giant(2, 0, 100, 10, 1, 3, 'Photos/giant.png', 'player'),
+            Bomber(3, 0, 100, 7, 1, 4, 'Photos/bomber.png', 'player')
         ] 
 
         self.player_units_p2 = [ 
-            Archer(0, 0, 100, 5, 2, 5, 3, 'Photos/enemy_archer.png', 'enemy'),
-            Mage(1, 0, 100, 3, 1, 4, 2, 'Photos/enemy_mage.png', 'enemy'),
-            Giant(2, 0, 100, 10, 1, 3, 2, 'Photos/enemy_giant.png', 'enemy'),
-            Bomber(3, 0, 100, 7, 1, 4, 2, 'Photos/enemy_bomber.png', 'enemy')
+            Archer(0, 0, 100, 5, 2, 5, 'Photos/enemy_archer.png', 'enemy'),
+            Mage(1, 0, 100, 3, 1, 4, 'Photos/enemy_mage.png', 'enemy'),
+            Giant(2, 0, 100, 10, 1, 3,'Photos/enemy_giant.png', 'enemy'),
+            Bomber(3, 0, 100, 7, 1, 4, 'Photos/enemy_bomber.png', 'enemy')
         ]
 
         self.tile_map = Map_Aleatoire(tile_map, TERRAIN_TILES, GC.CELL_SIZE)
