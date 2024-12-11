@@ -40,6 +40,133 @@ class Game:
         ]
         # Initialize spawn for bomber units as well
         self.spawn_units()
+        
+        self.walkable_tiles = self.inititialize_walkable_tiles()
+        self.collectible_spawn_timer = 0
+        self.spawn_interval = 2  # Seconds between spawns
+        self.collectible_items = []
+        self.collectible_templates = self.initialize_collectibles(tile_map)
+
+    #-------------------Collectibles Logic------------#
+    def initialize_collectibles(self, tile_map):
+        
+        # Create effects
+        effects = {
+            "health": Effect("health", "soundeffects/apply_effect.wav"),
+            "speed": Effect("speed", "soundeffects/apply_effect.wav"),
+            "damage": Effect("damage", "soundeffects/apply_effect.wav")
+        }
+        
+        # Create and return collectible templates
+        return {
+            "speed": lambda: CollectibleItem(
+                effects["speed"],
+                'image/speed_potion.png',
+                "soundeffects/apply_effect.wav",
+                120,
+                tile_map,
+                self.game_log
+            ),
+            "damage": lambda: CollectibleItem(
+                effects["damage"],
+                'image/power_buff.png',
+                "soundeffects/apply_effect.wav",
+                120,
+                tile_map,
+                self.game_log)
+            }
+    """,
+            "health": lambda: CollectibleItem(
+                effects["health"],
+                'image/health_potion.png',
+                "soundeffects/apply_effect.wav",
+                120,
+                tile_map,
+                self.game_log
+            "damage": lambda: CollectibleItem(
+                effects["damage"],
+                'image/power_buff.png',
+                "soundeffects/apply_effect.wav",
+                120,
+                tile_map,
+                self.game_log
+            )"""
+
+    def spawn_collectible(self):
+        print("Spawning collectible...")
+        # Choose a random collectible type
+        collectible_type = random.choice(list(self.collectible_templates.keys()))
+        new_collectible = self.collectible_templates[collectible_type]()
+        max_items_shown = 3
+        activated_items = 0 
+        for item in self.collectible_items : 
+            if item.is_active : 
+                activated_items += 1 
+        
+        if activated_items >= max_items_shown :
+            return 
+        # Find a valid spawn location
+        walkable_tiles = []
+        for x in range(GC.WORLD_X):
+            for y in range(GC.WORLD_Y):
+                if self.tile_map.is_walkable(x, y):
+                    # Check if location is not too close to any player
+                    too_close = False
+                    for unit in self.player_units_p1 + self.player_units_p2:
+                        if abs(unit.x - x * GC.CELL_SIZE) < GC.CELL_SIZE * 3 and \
+                        abs(unit.y - y * GC.CELL_SIZE) < GC.CELL_SIZE * 3:
+                            too_close = True
+                            break
+                    if not too_close:
+                        walkable_tiles.append((x, y))
+        print(f"Found {len(walkable_tiles)} walkable tiles.")
+        if walkable_tiles:
+            spawn_x, spawn_y = random.choice(walkable_tiles)
+            new_collectible.x = spawn_x 
+            new_collectible.y = spawn_y 
+            self.collectible_items.append(new_collectible)
+            self.game_log.add_message("Collectible spawned", 'other')
+            print("Collectible are spawned at", spawn_x, spawn_y)
+        else : 
+            print('No walkable tile found for collectible!')
+        
+    def update_collectibles(self, delta_time):
+        self.collectible_spawn_timer += delta_time
+        if self.collectible_spawn_timer >= self.spawn_interval:
+            self.spawn_collectible()
+            self.collectible_spawn_timer = 0
+
+        for item in self.collectible_items:
+            item.update(delta_time)  # Handle respawn logic
+            if item.is_active:
+                for unit in self.player_units_p1 + self.player_units_p2:
+                    item.collect(unit)
+    """"def update_collectibles(self, delta_time):
+        # Update spawn timer
+        self.collectible_spawn_timer += delta_time
+        #Spawn new collectible if timer exceeds interval
+        if self.collectible_spawn_timer >= self.spawn_interval:
+            self.spawn_collectible()
+            self.collectible_spawn_timer = 0  # Reset timer
+
+        
+        # Update existing collectibles
+        for item in self.collectible_items[:]:  # Create a copy of the list to modify it safely
+            item.update(delta_time)
+            # Check collection for all units
+            for unit in self.player_units_p1 + self.player_units_p2:
+                item.collect(unit)
+            
+            # Remove inactive items that have exceeded their respawn time
+            if not item.is_active and item.respawn_counter >= item.respawn_time:
+                self.collectible_items.remove(item)
+"""
+    def draw_collectibles(self):
+        for item in self.collectible_items:
+            if item.is_active:
+                self.screen.blit(item.image, (item.x * GC.CELL_SIZE, item.y * GC.CELL_SIZE))
+    
+    #----------End of this part----------------------#    
 
     '''--------S'assurer que les unités n'apparaissent pas sur des cases non praticables------------''' 
     def inititialize_walkable_tiles(self) :
