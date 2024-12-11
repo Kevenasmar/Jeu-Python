@@ -7,7 +7,7 @@ from constante import GameConstantes as GC
 from configureWorld import*
 from World_Drawer import *
 from world import*
-from Log import * # type: ignore
+from GameLog import * # type: ignore
 from menu import *  # Import menu functions
 
 # Setup tiles
@@ -22,7 +22,7 @@ map = Map("map/start.map", tiles_kind, GC.CELL_SIZE)
 class Game:
     def __init__(self, screen, tile_map):
         self.screen = screen
-        self.game_log = Log(500, GC.HEIGHT, GC.WIDTH, 0, self.screen)
+        self.game_log = GameLog(500, GC.HEIGHT, GC.WIDTH, 0, self.screen)
 
         self.player_units_p1 = [ 
            #(x, y, points de vie, statistique d'attaque, statistique de défense, vitesse, vision, image, équipe)
