@@ -41,7 +41,9 @@ class Unit:
         self.image = pygame.transform.scale(self.image, (int( GC.CELL_SIZE), int( GC.CELL_SIZE)))  # Échelle de l'image
         self.team = team  # 'player' ou 'enemy'
         self.is_selected = False
-
+        self.active_effects = []
+    def get_position(self) : 
+        return (self.x, self.y)
 
     '''Méthodes'''
 
@@ -152,6 +154,10 @@ class Archer(Unit):
 '''Le Géant'''
 
 class Giant(Unit):
+    def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
+        super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
+        self.punch_range = 1
+        self.stomp_range = 2
     def __init__(self, x, y, health, attack, defense, speed, image_path, team):
         super().__init__(x, y, health, attack, defense, speed, image_path, team)
         self.punch_range = GC.PUNCH_RANGE
@@ -166,7 +172,21 @@ class Giant(Unit):
         """
         return any(unit.x == x and unit.y == y for unit in units)
 
+    def is_occupied(self, x, y, units):
+        """
+        Vérifier si la case (x, y) est occupée par une unité.
+        units: liste de toutes les unités dans le jeu.
+        """
+        return any(unit.x == x and unit.y == y for unit in units)
+
     def punch(self, target):
+        """
+        Punch ability:
+        - Deals heavy damage to the target.
+        """
+        target.health -= self.attack_power * 2  # High damage
+        if target.health < 0:
+            target.health = 0  # Prevent health from going negative
         """Inflige des dégâts importants à la cible."""
         target.health -= self.attack_power - target.defense  # Dégâts élevés
         super().load_sound_effect("music/punch_sound.mp3")  
