@@ -33,4 +33,38 @@ class GameConstantes :
     log = 4
     montain = 5
 
- 
+
+    #Propriétés des unités
+    #ARCHER 
+    ARCHER_HP = 100
+    ARCHER_ATK = 12
+    ARCHER_DEF = 6
+    ARCHER_SPEED = 5
+    NORMAL_ARROW_RANGE = 5
+    FIRE_ARROW_RANGE = 3
+    HEADSHOT_PROB = 0.1
+
+    #GIANT
+    GIANT_HP = 125
+    GIANT_ATK = 25
+    GIANT_DEF = 9
+    GIANT_SPEED = 2
+    PUNCH_RANGE = 2
+    STOMP_RANGE = 1
+
+    #MAGE
+    MAGE_HP = 75
+    MAGE_ATK = 11
+    MAGE_DEF = 4
+    MAGE_SPEED = 4
+    HEAL_RANGE = 1
+    POTION_RANGE = 6
+
+    #BOMBER
+    BOMBER_HP = 100
+    BOMBER_ATK = 18
+    BOMBER_DEF = 4
+    BOMBER_SPEED = 3
+    BOMB_RANGE = 3
+    EXPLODE_RANGE = 5
+
