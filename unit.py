@@ -33,6 +33,7 @@ class Unit:
         self.x = x
         self.y = y
         self.health = health
+        self.max_health = 100 # Default maximum health
         self.attack_power = attack_power
         self.defense = defense
         self.speed = speed
@@ -74,17 +75,29 @@ class Unit:
         screen.blit(self.image, image_rect)
 
     def draw_healthbar(self, screen):
-        """Dessine une bar de vie verticale alignée sur la bordure droite de a cellule de l'unité."""
-        bar_width = 5 
-        bar_height = GC.CELL_SIZE  
-        bar_x = self.x * GC.CELL_SIZE + GC.CELL_SIZE - bar_width  
-        bar_y = self.y * GC.CELL_SIZE  
+        """Draws a health bar proportional to the unit's current health and maximum health."""
+        bar_width = 5
+        bar_height = GC.CELL_SIZE
+        bar_x = self.x * GC.CELL_SIZE + GC.CELL_SIZE - bar_width
+        bar_y = self.y * GC.CELL_SIZE
 
+        # Determine the maximum health of the unit
+        max_health = 100  # Default maximum health
+        if isinstance(self, Giant):
+            max_health = 125
+        elif isinstance(self, Mage):
+            max_health = 75
+
+        # Draw the background (red) health bar
         pygame.draw.rect(screen, GC.RED, (bar_x, bar_y, bar_width, bar_height))
-        
-        current_health_height = max(0, bar_height * (self.health / 100))  
-        green_bar_y = bar_y + (bar_height - current_health_height)  
+
+        # Calculate the current health height proportionally
+        current_health_height = max(0, bar_height * (self.health / max_health))
+        green_bar_y = bar_y + (bar_height - current_health_height)
+
+        # Draw the foreground (green) health bar
         pygame.draw.rect(screen, GC.GREEN, (bar_x, green_bar_y, bar_width, current_health_height))
+
 
 
 '''--------------------------Les Différents Types d'unité et leurs Compétences-----------------------------------'''
@@ -98,8 +111,8 @@ class Archer(Unit):
         super().__init__(x, y, health, attack, defense, speed, image_path, team)
         self.dot_targets = {}  # Suivre les unités affectées par la flèche en feu
         #Portées d'attaque
-        self.normal_arrow_range = 3
-        self.fire_arrow_range = 5
+        self.normal_arrow_range = GC.NORMAL_ARROW_RANGE
+        self.fire_arrow_range = GC.FIRE_ARROW_RANGE
         self.ranges = [self.normal_arrow_range, self.fire_arrow_range]
 
     def normal_arrow(self, target):
@@ -128,9 +141,10 @@ class Archer(Unit):
 class Giant(Unit):
     def __init__(self, x, y, health, attack, defense, speed, image_path, team):
         super().__init__(x, y, health, attack, defense, speed, image_path, team)
-        self.punch_range = 1
-        self.stomp_range = 2 
+        self.punch_range = GC.PUNCH_RANGE
+        self.stomp_range = GC.STOMP_RANGE
         self.ranges = [self.punch_range, self.stomp_range]
+        self.max_health = GC.GIANT_HP
 
     def is_occupied(self, x, y, units):
         """
@@ -141,13 +155,13 @@ class Giant(Unit):
 
     def punch(self, target):
         """Inflige des dégâts importants à la cible."""
-        target.health -= self.attack_power * 2 - target.defense  # Dégâts élevés
+        target.health -= self.attack_power - target.defense  # Dégâts élevés
 
     def stomp(self, target, tile_map, units):
         """Inflict heavy damage and knock back the target. Finds an alternative
         valid tile if the initial knockback position is non-walkable.
         """
-        target.health -= self.attack_power * 3 - target.defense  # Very high damage
+        target.health -= self.attack_power * 2 - target.defense  # Very high damage
 
         # Determine the knockback direction
         dx = target.x - self.x
@@ -191,9 +205,10 @@ class Mage(Unit):
     def __init__(self, x, y, health, attack, defense, speed, image_path, team):
         super().__init__(x, y, health, attack, defense, speed, image_path, team)
         self.can_walk_on_water = True
-        self.heal_range = 1
-        self.potion_range = 6
+        self.heal_range = GC.HEAL_RANGE
+        self.potion_range = GC.POTION_RANGE
         self.ranges = [self.heal_range, self.potion_range]
+        self.max_health = GC.MAGE_HP
         
     def potion(self, target):
         """Jette une potion magique"""
@@ -202,11 +217,11 @@ class Mage(Unit):
     def heal_allies(self, target):
         """Soigne une unité alliée."""
         if target.team == self.team:  # Only heal allies
-            target.health += self.attack_power
+            target.health += self.attack_power * 2
             target.health = min(target.health, 100)  # Cap health at 100
-            if target.name == 'Giant':
+            if isinstance(target, Giant): # Cap health at 125 for Giant
                 target.health = min(target.health, 125)
-            if target.name == 'Mage':
+            if isinstance(target, Mage): # Cap health at 75 for Mage
                 target.health = min(target.health, 75)
             print(f"Cannot heal {target.__class__.__name__}, they are not an ally!")
 
@@ -216,8 +231,8 @@ class Mage(Unit):
 class Bomber(Unit):
     def __init__(self, x, y, health, attack, defense, speed, image_path, team):
         super().__init__(x, y, health, attack, defense, speed, image_path, team)
-        self.bomb_range = 2  
-        self.explode_range = 5
+        self.bomb_range = GC.BOMB_RANGE
+        self.explode_range = GC.EXPLODE_RANGE
         self.ranges = [self.bomb_range, self.explode_range]  
 
     def throw_bomb(self, target, all_units, tile_map, game_instance):

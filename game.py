@@ -25,18 +25,18 @@ class Game:
         self.game_log = GameLog(500, GC.HEIGHT, GC.WIDTH, 0, self.screen)
 
         self.player_units_p1 = [ 
-           #(x, y, points de vie, statistique d'attaque, statistique de défense, vitesse, image, équipe)
-            Archer(0, 0, 100, 5, 2, 5, 'Photos/archer.png', 'player'),
-            Mage(1, 0, 100, 3, 1, 4, 'Photos/mage.png', 'player'),
-            Giant(2, 0, 100, 10, 1, 3, 'Photos/giant.png', 'player'),
-            Bomber(3, 0, 100, 7, 1, 4, 'Photos/bomber.png', 'player')
+           #(x, y, points de vie, attaque, défense, vitesse, image, équipe)
+            Archer(0, 0, GC.ARCHER_HP, GC.ARCHER_ATK, GC.ARCHER_DEF, GC.ARCHER_SPEED, 'Photos/archer.png', 'player'),
+            Mage(1, 0, GC.MAGE_HP, GC.MAGE_ATK, GC.MAGE_DEF, GC.MAGE_SPEED, 'Photos/mage.png', 'player'),
+            Giant(2, 0, GC.GIANT_HP, GC.GIANT_ATK, GC.GIANT_DEF, GC.GIANT_SPEED, 'Photos/giant.png', 'player'),
+            Bomber(3, 0, GC.BOMBER_HP, GC.BOMBER_ATK, GC.BOMBER_DEF, GC.BOMBER_SPEED, 'Photos/bomber.png', 'player')
         ] 
 
         self.player_units_p2 = [ 
-            Archer(0, 0, 100, 5, 2, 5, 'Photos/enemy_archer.png', 'enemy'),
-            Mage(1, 0, 100, 3, 1, 4, 'Photos/enemy_mage.png', 'enemy'),
-            Giant(2, 0, 100, 10, 1, 3,'Photos/enemy_giant.png', 'enemy'),
-            Bomber(3, 0, 100, 7, 1, 4, 'Photos/enemy_bomber.png', 'enemy')
+            Archer(0, 0, GC.ARCHER_HP, GC.ARCHER_ATK, GC.ARCHER_DEF, GC.ARCHER_SPEED, 'Photos/enemy_archer.png', 'enemy'),
+            Mage(1, 0, GC.MAGE_HP, GC.MAGE_ATK, GC.MAGE_DEF, GC.MAGE_SPEED, 'Photos/enemy_mage.png', 'enemy'),
+            Giant(2, 0,GC.GIANT_HP, GC.GIANT_ATK, GC.GIANT_DEF, GC.GIANT_SPEED,'Photos/enemy_giant.png', 'enemy'),
+            Bomber(3, 0, GC.BOMBER_HP, GC.BOMBER_ATK, GC.BOMBER_DEF, GC.BOMBER_SPEED, 'Photos/enemy_bomber.png', 'enemy')
         ]
 
         self.tile_map = Map_Aleatoire(tile_map, TERRAIN_TILES, GC.CELL_SIZE)
@@ -462,7 +462,7 @@ class Game:
                             # Vérifier un tir à la tête (Headshot) dans la méthode d'action
                             if hasattr(action_method, '__name__') and action_method.__name__ == "normal_arrow":
                                 import random
-                                headshot_probability = 0.05  # 4% de chance de Headshot
+                                headshot_probability = GC.HEADSHOT_PROB  # 10% de chance de Headshot
                                 if random.random() < headshot_probability:
                                     target.health = 0  # Mort instantanée
                                     self.game_log.add_message(f"Headshot ! {target.__class__.__name__} killed in one shot! !", 'action')

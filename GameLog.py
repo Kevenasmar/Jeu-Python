@@ -7,7 +7,7 @@ from constante import GameConstantes as GC # type: ignore
 # Ability descriptions for manual customization
 ABILITY_DESCRIPTIONS = {
     "fire_arrow": "Applies damage over time to the target.",
-    "normal_arrow": "Simple attack - 4% chance of Headshot!",
+    "normal_arrow": "Simple attack - 10% chance of Headshot!",
     "potion": "Throws a potion to harm the target.",
     "heal_allies": "Restores health to an ally.",
     "punch": "A powerful attack with high damage.",
@@ -21,9 +21,9 @@ ABILITY_DAMAGE = {
     "fire_arrow": 1,  # Equal to the unit's attack power
     "normal_arrow": 1,  # 1x the unit's attack power
     "potion": 1,  # 0.5x the unit's attack power
-    "heal_allies": -1,  # -1 to indicate healing (not damage)
-    "punch": 2,  # 2x the unit's attack power
-    "stomp": 3,  # 3x the unit's attack power
+    "heal_allies": -2,  # -2 to indicate healing (not damage)
+    "punch": 1,  # 1x the unit's attack power
+    "stomp": 2,  # 2x the unit's attack power
     "throw_bomb": 1,  # 1x the unit's attack power
     "explode": 3,  # 3x the unit's attack power
 }
@@ -151,15 +151,15 @@ class GameLog:
         # Draw the background rectangle for unit info
         pygame.draw.rect(
             self.screen,
-            (173, 216, 230),  # Dark gray background
+            (173, 216, 230),  # Light blue background
             (self.pos_x, info_area_y, self.width, info_area_height + 60)
         )
 
         # Draw a border around the unit info section
         pygame.draw.rect(
             self.screen,
-            GC.BLUE,  # White border
-            (self.pos_x, info_area_y, self.width, info_area_height + 60 ),
+            GC.BLUE,  # Blue border
+            (self.pos_x, info_area_y, self.width, info_area_height + 60),
             2
         )
 
@@ -179,9 +179,12 @@ class GameLog:
         bar_x = portrait_x + portrait_width + 20
         bar_y = portrait_y
 
+        # Retrieve the max health dynamically from the selected unit
+        max_health = getattr(self.selected_unit, 'max_health', 100)  # Default to 100 if not defined
+
         # Health bar logic
         pygame.draw.rect(self.screen, (200, 0, 0), (bar_x, bar_y, bar_width, bar_height))  # Red background
-        current_health_height = int(bar_height * (self.selected_unit.health / 100))
+        current_health_height = int(bar_height * (self.selected_unit.health / max_health))
         green_bar_y = bar_y + (bar_height - current_health_height)
         pygame.draw.rect(self.screen, (0, 200, 0), (bar_x, green_bar_y, bar_width, current_health_height))  # Green foreground
         pygame.draw.rect(self.screen, (255, 255, 255), (bar_x, bar_y, bar_width, bar_height), 2)  # White border
@@ -192,7 +195,7 @@ class GameLog:
 
         # Draw the unit name directly above the stats
         unit_name = self.selected_unit.__class__.__name__
-        unit_name_surface = self.font.render(unit_name, True, GC.BLACK)  # Gold color for name
+        unit_name_surface = self.font.render(unit_name, True, GC.BLACK)  # Black color for name
         self.screen.blit(unit_name_surface, (stats_x, stats_y))
 
         # Draw stats below the name
@@ -202,10 +205,10 @@ class GameLog:
             f"Speed: {self.selected_unit.speed}",
         ]
         for stat in stats:
-            stat_surface = self.font.render(stat, True, GC.BLUE)  # Sky blue color
+            stat_surface = self.font.render(stat, True, GC.BLUE)  # Blue color
             self.screen.blit(stat_surface, (stats_x, stats_y))
             stats_y += 30
-            
+
         # Add this conditional block for the Mage
         if unit_name == "Mage":
             water_ability_surface = self.font.render("Can walk on water!", True, GC.BLUE)
@@ -215,7 +218,7 @@ class GameLog:
         # Add "Abilities" label below the stats
         abilities_x = self.pos_x + padding
         abilities_y = portrait_y + portrait_height + 20
-        abilities_label_surface = self.font.render("Abilities:", True, GC.BLACK)  # White label
+        abilities_label_surface = self.font.render("Abilities:", True, GC.BLACK)  # Black label
         self.screen.blit(abilities_label_surface, (abilities_x, abilities_y))
         abilities_y += 30
 
@@ -248,14 +251,15 @@ class GameLog:
             )
             self.screen.blit(range_surface, (abilities_x + 20, abilities_y))  # Indent
             abilities_y += 30
-            
-                # Add a warning for the "explode" ability
+
+            # Add a warning for the "explode" ability
             if ability['name'] == "explode":
                 warning_surface = self.font.render(
                     "CAREFUL! This hurts allies too.", True, (255, 165, 0)  # Orange for warning
                 )
                 self.screen.blit(warning_surface, (abilities_x + 20, abilities_y))
                 abilities_y += 30  # Add spacing after the warning
+
 
 
 
