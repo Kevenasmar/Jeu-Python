@@ -45,7 +45,6 @@ class Unit:
     def get_position(self) : 
         return (self.x, self.y)
 
-
     '''Méthodes'''
 
     def move(self, new_x, new_y):
@@ -155,17 +154,14 @@ class Archer(Unit):
 '''Le Géant'''
 
 class Giant(Unit):
-<<<<<<< HEAD
     def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
         super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
         self.punch_range = 1
         self.stomp_range = 2
-=======
     def __init__(self, x, y, health, attack, defense, speed, image_path, team):
         super().__init__(x, y, health, attack, defense, speed, image_path, team)
         self.punch_range = GC.PUNCH_RANGE
         self.stomp_range = GC.STOMP_RANGE
->>>>>>> 60f482fec46fda7e53dd9bcb3b21f531b3915730
         self.ranges = [self.punch_range, self.stomp_range]
         self.max_health = GC.GIANT_HP
 
@@ -176,8 +172,14 @@ class Giant(Unit):
         """
         return any(unit.x == x and unit.y == y for unit in units)
 
+    def is_occupied(self, x, y, units):
+        """
+        Vérifier si la case (x, y) est occupée par une unité.
+        units: liste de toutes les unités dans le jeu.
+        """
+        return any(unit.x == x and unit.y == y for unit in units)
+
     def punch(self, target):
-<<<<<<< HEAD
         """
         Punch ability:
         - Deals heavy damage to the target.
@@ -185,56 +187,6 @@ class Giant(Unit):
         target.health -= self.attack_power * 2  # High damage
         if target.health < 0:
             target.health = 0  # Prevent health from going negative
-
-    def stomp(self, target, all_units, tile_map, game_instance):
-        """
-        Executes the stomp ability:
-        - Deals full damage to the primary target (red tile).
-        - Deals 50% damage to enemies on secondary tiles (yellow tiles).
-        - Knocks all affected units back away from the Giant.
-        """
-        primary_damage = self.attack_power * 3  # Full damage
-        secondary_damage = primary_damage // 2  # 50% damage
-
-        # Apply full damage and knockback to the primary target
-        target.health -= primary_damage
-        if target.health < 0:
-            target.health = 0
-        self.apply_knockback(target, (self.x, self.y), tile_map, game_instance)
-
-        # Determine all secondary tiles (yellow tiles)
-        secondary_tiles = [
-            (target.x - 1, target.y - 1),  # Top-left
-            (target.x, target.y - 1),     # Top-center
-            (target.x + 1, target.y - 1), # Top-right
-            (target.x - 1, target.y),     # Left
-            (target.x + 1, target.y),     # Right
-            (target.x - 1, target.y + 1), # Bottom-left
-            (target.x, target.y + 1),     # Bottom-center
-            (target.x + 1, target.y + 1)  # Bottom-right
-        ]
-
-        # Apply damage and knockback to enemies in secondary tiles
-        for unit in all_units:
-            if (unit.x, unit.y) in secondary_tiles:
-                # Apply 50% damage
-                unit.health -= secondary_damage
-                if unit.health < 0:
-                    unit.health = 0
-
-                # Apply knockback to secondary units
-                self.apply_knockback(unit, (self.x, self.y), tile_map, game_instance)
-
-    def apply_knockback(self, unit, stomp_origin, tile_map, game_instance):
-        """
-        Knocks a unit away from the stomp origin.
-        If the resulting position is invalid, the unit doesn't move.
-        """
-        dx = unit.x - stomp_origin[0]
-        dy = unit.y - stomp_origin[1]
-
-        # Normalize direction to calculate knockback
-=======
         """Inflige des dégâts importants à la cible."""
         target.health -= self.attack_power - target.defense  # Dégâts élevés
         super().load_sound_effect("music/punch_sound.mp3")  
@@ -251,24 +203,11 @@ class Giant(Unit):
         dy = target.y - self.y
 
         # Normalize the knockback direction
->>>>>>> 60f482fec46fda7e53dd9bcb3b21f531b3915730
         if dx != 0:
             dx = int(dx / abs(dx))
         if dy != 0:
             dy = int(dy / abs(dy))
 
-<<<<<<< HEAD
-        # Calculate the new position for knockback
-        new_x = unit.x + dx
-        new_y = unit.y + dy
-
-        # Validate the new position
-        if (0 <= new_x < GC.GRID_SIZE and 0 <= new_y < GC.GRID_SIZE and 
-                tile_map.is_walkable(new_x, new_y, unit) and not game_instance.is_occupied(new_x, new_y)):
-            unit.x = new_x
-            unit.y = new_y
-
-=======
         # Apply the knockback
         new_x = target.x + dx
         new_y = target.y + dy
@@ -285,7 +224,6 @@ class Giant(Unit):
                 and tile_map.is_walkable(target.x + nx, target.y + ny, target)
                 and (target.x + nx, target.y + ny) != (self.x, self.y)  # Exclude Giant's position
             ]
->>>>>>> 60f482fec46fda7e53dd9bcb3b21f531b3915730
 
             # If valid tiles are found, choose one randomly
             if adjacent_cells:
