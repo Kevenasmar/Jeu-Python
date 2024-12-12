@@ -100,15 +100,37 @@ class UnwalkableTile(TileKind):
         """
         return False  # l'unité ne peut pas marcher
 
+class ConditionalTile(TileKind):
+    """
+    Classe pour représenter les tuiles avec des comportements conditionnels.
+    """
+    def __init__(self, nom, image_path, is_solide):
+        super().__init__(nom, image_path, is_solide)
+
+    def interact(self, unité):
+        """
+        Par défaut, les tuiles conditionnelles ne sont pas marchables.
+        Les classes enfants peuvent redéfinir cette logique.
+        """
+        return not self.is_solide
+
 # Définition de classes pour représenter les différents types de tuiles
 class GrassTile(WalkableTile):
     def __init__(self):
         super().__init__("grass", "image/grass.png")
 
-class WaterTile(UnwalkableTile):
+class WaterTile(ConditionalTile):
     def __init__(self):
-        super().__init__("water", "image/water.png")
-       
+        super().__init__("water", "image/water.png", True)
+    
+    def interact(self, unité):
+        """
+        Permet au mage de marcher sur l'eau, mais pas aux autres unités.
+        """
+        if isinstance(unité, Mage):
+            return True  # Le mage peut marcher sur l'eau
+        return False  # Les autres unités ne peuvent pas
+
 class RockTile(UnwalkableTile):
     def __init__(self):
         super().__init__("rock", "image/rock.png")
