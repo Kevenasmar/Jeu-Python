@@ -4,7 +4,7 @@ import pygame
 pygame.init()
 from constante import GameConstantes as GC # type: ignore
 
-# Ability descriptions for manual customization
+# Description des compétences pour facilité
 ABILITY_DESCRIPTIONS = {
     "fire_arrow": "Applies damage over time to the target.",
     "normal_arrow": "Simple attack - 10% chance of Headshot!",
@@ -18,16 +18,15 @@ ABILITY_DESCRIPTIONS = {
 
 #Multiples de la attack_power de l'unité correspondante
 ABILITY_DAMAGE = {
-    "fire_arrow": 1,  # Equal to the unit's attack power
-    "normal_arrow": 1,  # 1x the unit's attack power
-    "potion": 1,  # 0.5x the unit's attack power
-    "heal_allies": -2,  # -2 to indicate healing (not damage)
-    "punch": 1,  # 1x the unit's attack power
-    "stomp": 2,  # 2x the unit's attack power
-    "throw_bomb": 1,  # 1x the unit's attack power
-    "explode": 3,  # 3x the unit's attack power
+    "fire_arrow": 1,  
+    "normal_arrow": 1,  
+    "potion": 1,  
+    "heal_allies": -2,  
+    "punch": 1,  
+    "stomp": 2,  
+    "throw_bomb": 1,  
+    "explode": 3,  
 }
-
 
 class GameLog:
     def __init__(self, width, height, pos_x, pos_y, screen):
@@ -41,10 +40,10 @@ class GameLog:
         self.messages = []
         self.limite = 5
         self.surface = pygame.Surface((self.width, self.height))
-        self.selected_unit = None  # To display selected unit details
+        self.selected_unit = None  
 
     def add_message(self, message, type):
-        """Adds a message to the GameLog."""
+        """Ajouter un message au Game Log"""
         if len(self.messages) >= self.limite:
             self.messages.pop(0)
 
@@ -67,8 +66,7 @@ class GameLog:
         elif type == "info":
             couleur_text = GC.BLUE
 
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        formated_message = f"[{timestamp}] {message}"
+        formated_message = f"{message}"
 
         text_surface = self.font.render(formated_message, True, couleur_text)
         self.messages.append(text_surface)
@@ -77,20 +75,15 @@ class GameLog:
         self.selected_unit = unit
         if unit:
             abilities = []
-
-            # Explicit mapping for abilities with non-matching range attribute names
             ability_range_map = {
                 "throw_bomb": "bomb_range",
                 "heal_allies": "heal_range",
             }
 
-            # Detect abilities dynamically
             for attr in dir(unit):
                 if callable(getattr(unit, attr)) and not attr.startswith("_"):
-                    # Check for matching range attribute
                     range_attr = ability_range_map.get(attr, f"{attr}_range")
                     if hasattr(unit, range_attr):
-                        # Calculate actual damage based on attack_power and multiplier
                         damage_multiplier = ABILITY_DAMAGE.get(attr, 0)
                         if damage_multiplier > 0:
                             actual_damage = unit.attack_power * damage_multiplier
@@ -107,22 +100,17 @@ class GameLog:
                             "description": ABILITY_DESCRIPTIONS.get(attr, "No description available."),
                             "damage": damage_text,
                         })
-
-            # Assign detected abilities to the unit
             setattr(unit, "abilities", abilities)
 
-
-
-
     def wrap_text(self, text, max_width, font):
-        """Wraps text into multiple lines to fit within a specified width."""
+        '''Enroule les textes sur plusieurs lignes pour les faire tenir dans une largeur spécifique.'''
         words = text.split()
         lines = []
         current_line = []
         current_width = 0
 
         for word in words:
-            word_surface = font.render(word + " ", True, (0, 0, 0))  # Temporary render to measure width
+            word_surface = font.render(word + " ", True, (0, 0, 0))  
             word_width = word_surface.get_width()
             if current_width + word_width > max_width:
                 lines.append(" ".join(current_line))
@@ -137,25 +125,24 @@ class GameLog:
 
         return lines
 
-
     def draw_unit_info(self):
-        """Displays the selected unit's details and abilities in a structured and visually appealing format."""
+        """Affiche les détails et compétences de l'unité sélectionnée"""
         if not self.selected_unit:
             return
 
-        # Define the unit info area
+        # Définir la position de la section
         info_area_height = 350
         info_area_y = self.pos_y + self.height - info_area_height - 60
         padding = 15
 
-        # Draw the background rectangle for unit info
+        # Dessiner le rectangle de fond 
         pygame.draw.rect(
             self.screen,
-            (173, 216, 230),  # Light blue background
+            (173, 216, 230),  # Fond bleu ciel
             (self.pos_x, info_area_y, self.width, info_area_height + 60)
         )
 
-        # Draw a border around the unit info section
+        # Dessiner une bordure autour de la section 
         pygame.draw.rect(
             self.screen,
             GC.BLUE,  # Blue border
@@ -163,93 +150,89 @@ class GameLog:
             2
         )
 
-        # Scale the portrait to fit nicely within the section
         portrait_width = 100
         portrait_height = 100
         portrait = pygame.transform.scale(self.selected_unit.image, (portrait_width, portrait_height))
 
-        # Calculate the position to center the portrait vertically in the section
+        # Centrer le portrait verticalement dans la section 
         portrait_x = self.pos_x + padding
         portrait_y = info_area_y + padding
         self.screen.blit(portrait, (portrait_x, portrait_y))
 
-        # Draw the health bar next to the portrait
+        # Dessine la bar de vie prés du portrait
         bar_width = 15
         bar_height = portrait_height
         bar_x = portrait_x + portrait_width + 20
         bar_y = portrait_y
 
-        # Retrieve the max health dynamically from the selected unit
-        max_health = getattr(self.selected_unit, 'max_health', 100)  # Default to 100 if not defined
+        max_health = getattr(self.selected_unit, 'max_health', 100)  # 100 par défaut
 
-        # Health bar logic
-        pygame.draw.rect(self.screen, (200, 0, 0), (bar_x, bar_y, bar_width, bar_height))  # Red background
+        pygame.draw.rect(self.screen, (200, 0, 0), (bar_x, bar_y, bar_width, bar_height))  # Fond rouge
         current_health_height = int(bar_height * (self.selected_unit.health / max_health))
         green_bar_y = bar_y + (bar_height - current_health_height)
-        pygame.draw.rect(self.screen, (0, 200, 0), (bar_x, green_bar_y, bar_width, current_health_height))  # Green foreground
-        pygame.draw.rect(self.screen, (255, 255, 255), (bar_x, bar_y, bar_width, bar_height), 2)  # White border
+        pygame.draw.rect(self.screen, (0, 200, 0), (bar_x, green_bar_y, bar_width, current_health_height))  # Vert
+        pygame.draw.rect(self.screen, (255, 255, 255), (bar_x, bar_y, bar_width, bar_height), 2)  # Bordure blanche
 
-        # Stats section next to the health bar
+        # Section statistiques a coté de la bar de vie 
         stats_x = bar_x + bar_width + 20
         stats_y = portrait_y
 
-        # Draw the unit name directly above the stats
+        # Afficher le nom de l'unité directement au dessus des statistiques 
         unit_name = self.selected_unit.__class__.__name__
-        unit_name_surface = self.font.render(unit_name, True, GC.BLACK)  # Black color for name
+        unit_name_surface = self.font.render(unit_name, True, GC.BLACK)  # Nom en noir
         self.screen.blit(unit_name_surface, (stats_x, stats_y))
 
-        # Draw stats below the name
+        # Statistiques en dessous du nom 
         stats_y += 30
         stats = [
             f"Defense: {self.selected_unit.defense}",
             f"Speed: {self.selected_unit.speed}",
         ]
         for stat in stats:
-            stat_surface = self.font.render(stat, True, GC.BLUE)  # Blue color
+            stat_surface = self.font.render(stat, True, GC.BLUE) 
             self.screen.blit(stat_surface, (stats_x, stats_y))
             stats_y += 30
 
-        # Add this conditional block for the Mage
+        # Ajouter une info supplémentaire pour le Mage 
         if unit_name == "Mage":
             water_ability_surface = self.font.render("Can walk on water!", True, GC.BLUE)
             self.screen.blit(water_ability_surface, (stats_x, stats_y))
             stats_y += 30
 
-        # Add "Abilities" label below the stats
         abilities_x = self.pos_x + padding
         abilities_y = portrait_y + portrait_height + 20
-        abilities_label_surface = self.font.render("Abilities:", True, GC.BLACK)  # Black label
+        abilities_label_surface = self.font.render("Abilities:", True, GC.BLACK)
         self.screen.blit(abilities_label_surface, (abilities_x, abilities_y))
         abilities_y += 30
 
-        # Display abilities with descriptions, damage, and ranges
+        # Afficher les compétences avec description, pouvoir d'attaque et portée
         for ability in self.selected_unit.abilities:
-            # Ability name
+            # Nom de la compétence
             ability_name_surface = self.font.render(
-                f"{ability['name']}", True, (139, 69, 19)  # Brown for ability name
+                f"{ability['name']}", True, (139, 69, 19)  # Marron
             )
             self.screen.blit(ability_name_surface, (abilities_x, abilities_y))
             abilities_y += 25
 
-            # Ability description
+            # Description 
             description_surface = self.font.render(
-                f"Description: {ability['description']}", True, (50, 50, 50)  # Gray for description
+                f"Description: {ability['description']}", True, (50, 50, 50)  # Gris foncé
             )
-            self.screen.blit(description_surface, (abilities_x + 20, abilities_y))  # Indent
+            self.screen.blit(description_surface, (abilities_x + 20, abilities_y))  
             abilities_y += 25
 
-            # Ability damage
+            # Dégats
             damage_surface = self.font.render(
-                f"Damage: {ability['damage']}", True, GC.RED  # Red for damage
+                f"Damage: {ability['damage']}", True, GC.RED 
             )
-            self.screen.blit(damage_surface, (abilities_x + 20, abilities_y))  # Indent
+            self.screen.blit(damage_surface, (abilities_x + 20, abilities_y)) 
             abilities_y += 25
 
-            # Ability range
+            # Portée 
             range_surface = self.font.render(
-                f"Range: {ability['range']}", True, (162, 91, 70)  # Cornflower blue for range
+                f"Range: {ability['range']}", True, (162, 91, 70)  
             )
-            self.screen.blit(range_surface, (abilities_x + 20, abilities_y))  # Indent
+            self.screen.blit(range_surface, (abilities_x + 20, abilities_y))  
             abilities_y += 30
 
             # Add a warning for the "explode" ability
@@ -260,12 +243,6 @@ class GameLog:
                 self.screen.blit(warning_surface, (abilities_x + 20, abilities_y))
                 abilities_y += 30  # Add spacing after the warning
 
-
-
-
-
-
-
     def draw(self):
         """Draws the GameLog, including messages and unit info."""
         # Draw the background
@@ -274,7 +251,6 @@ class GameLog:
             self.couleur_fond,
             (self.pos_x, self.pos_y, self.width, self.height),
         )
-
 
         # Draw the GameLog messages
         y_offset = 10

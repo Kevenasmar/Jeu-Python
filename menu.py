@@ -339,6 +339,7 @@ def main():
         pygame.image.load('Photos/enemy_mage.png'),
         pygame.image.load('Photos/enemy_giant.png'),
     ]
+    
     for i in range(len(p1_images)):
         p1_images[i] = pygame.transform.scale(p1_images[i], (50, 50))
         p2_images[i] = pygame.transform.scale(p2_images[i], (50, 50))

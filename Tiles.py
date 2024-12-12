@@ -5,6 +5,7 @@ from constante import GameConstantes as GC
 from abc import ABC, abstractmethod
 from unit import Mage
 screen = pygame.display.set_mode((GC.WIDTH,GC.HEIGHT))
+
 # Définition d'une classe abstraite pour représenter les types de tuiles
 class TileKind(ABC):
     """
@@ -108,7 +109,6 @@ class WaterTile(UnwalkableTile):
     def __init__(self):
         super().__init__("water", "image/water.png")
        
-
 class RockTile(UnwalkableTile):
     def __init__(self):
         super().__init__("rock", "image/rock.png")

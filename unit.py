@@ -101,20 +101,17 @@ class Unit:
         pygame.draw.rect(screen, GC.GREEN, (bar_x, green_bar_y, bar_width, current_health_height))
 
     def load_sound_effect(self, sound_path):
-        """Load and play a sound effect without interrupting the background music."""
         try:
-            # Load the sound effect
+            # Charge l'effet son
             sound_effect = pygame.mixer.Sound(sound_path)
-            sound_effect.set_volume(0.7)  # Set volume for the sound effect
-            sound_effect.play()  # Play the sound effect once
+            sound_effect.set_volume(0.7)  # Volume du son
+            sound_effect.play() 
         except pygame.error as e:
             print(f"Error loading sound effect: {e}")
         
-
-
-'''--------------------------Les Différents Types d'unité et leurs Compétences-----------------------------------'''
-'''Chaque unité a deux compétences propres a elle. Chaque compétence a une portée.'''
-
+        
+'''--------------------------Les Différents Types d'unité et leurs Compétences-----------------------------------
+Chaque unité a deux compétences propres a elle. Chaque compétence a une portée.'''
 
 '''L'Archer'''
 
@@ -127,11 +124,11 @@ class Archer(Unit):
         self.fire_arrow_range = GC.FIRE_ARROW_RANGE
         self.ranges = [self.normal_arrow_range, self.fire_arrow_range]
 
+    #Attaques
     def normal_arrow(self, target):
         """Flèche normale avec possibilité de mort instantanée. Le Headshot est géré dans le fichier game.py."""
         target.health -= self.attack_power - target.defense
         super().load_sound_effect("soundeffects/arrow_sound.mp3")
-
 
     def fire_arrow(self, target):
         """Flèche en feu, applique des effets de dégâts sur la durée (Damage Over Time DoT)."""
@@ -150,14 +147,9 @@ class Archer(Unit):
             else:
                 del self.dot_targets[target]
 
-
 '''Le Géant'''
 
 class Giant(Unit):
-    def __init__(self, x, y, health, attack, defense, speed, vision, image_path, team):
-        super().__init__(x, y, health, attack, defense, speed, vision, image_path, team)
-        self.punch_range = 1
-        self.stomp_range = 2
     def __init__(self, x, y, health, attack, defense, speed, image_path, team):
         super().__init__(x, y, health, attack, defense, speed, image_path, team)
         self.punch_range = GC.PUNCH_RANGE
@@ -165,6 +157,7 @@ class Giant(Unit):
         self.ranges = [self.punch_range, self.stomp_range]
         self.max_health = GC.GIANT_HP
 
+    #Le géant a une méthode pour vérifier si une case est occupée pour ne pas "stomp" une cible vers une autre unité
     def is_occupied(self, x, y, units):
         """
         Vérifier si la case (x, y) est occupée par une unité.
@@ -172,60 +165,54 @@ class Giant(Unit):
         """
         return any(unit.x == x and unit.y == y for unit in units)
 
+    #Attaques
     def punch(self, target):
-        """
-        Punch ability:
-        - Deals heavy damage to the target.
-        """
+        """Coup de poing """
         target.health -= self.attack_power * 2  # High damage
         if target.health < 0:
             target.health = 0  # Prevent health from going negative
         """Inflige des dégâts importants à la cible."""
-        target.health -= self.attack_power - target.defense  # Dégâts élevés
+        target.health -= self.attack_power - target.defense
         super().load_sound_effect("soundeffects/punch_sound.mp3")  
 
     def stomp(self, target, tile_map, units):
-        """Inflict heavy damage and knock back the target. Finds an alternative
-        valid tile if the initial knockback position is non-walkable.
+        """Inflige des dégâts élevés et recule la cible vers la case derrière elle. 
+        Trouve une case valide alternative si la position de derrière n'est pas occupée ou non-praticable 
         """
-        target.health -= self.attack_power * 2 - target.defense  # Very high damage
+        target.health -= self.attack_power * 2 - target.defense  # Dégâts très élevés
         super().load_sound_effect("soundeffects/stomp_sound.mp3")
 
-        # Determine the knockback direction
+        # Détermine la direction de recul 
         dx = target.x - self.x
         dy = target.y - self.y
 
-        # Normalize the knockback direction
+        # Normaliser la direction
         if dx != 0:
             dx = int(dx / abs(dx))
         if dy != 0:
             dy = int(dy / abs(dy))
 
-        # Apply the knockback
+        # Appliquer le recul
         new_x = target.x + dx
         new_y = target.y + dy
 
-        # Check if the new position is within bounds and walkable
+        # Vérifier que la nouvelle position est dans la limitte de la grille et praticable 
         if 0 <= new_x < GC.GRID_SIZE and 0 <= new_y < GC.GRID_SIZE and tile_map.is_walkable(new_x, new_y, target) and not self.is_occupied(new_x,new_y,units):
             target.x, target.y = new_x, new_y
         else:
-            # Collect adjacent valid tiles excluding the Giant's position
+            # Récupérer les cases valides adjacentes exclus la position du Géant  
             adjacent_cells = [
                 (target.x + nx, target.y + ny)
                 for nx, ny in [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)]
                 if 0 <= target.x + nx < GC.GRID_SIZE and 0 <= target.y + ny < GC.GRID_SIZE
                 and tile_map.is_walkable(target.x + nx, target.y + ny, target)
-                and (target.x + nx, target.y + ny) != (self.x, self.y)  # Exclude Giant's position
+                and (target.x + nx, target.y + ny) != (self.x, self.y)  
             ]
 
-            # If valid tiles are found, choose one randomly
+            # Si des cases valides sont trouvées, en choisir une aléatoirement
             if adjacent_cells:
                 new_x, new_y = random.choice(adjacent_cells)
                 target.x, target.y = new_x, new_y
-
-
-
-
 
 '''Le Mage'''
 
@@ -238,23 +225,22 @@ class Mage(Unit):
         self.ranges = [self.heal_range, self.potion_range]
         self.max_health = GC.MAGE_HP
         
+    #Attaque
     def potion(self, target):
         """Jette une potion magique"""
         target.health -= self.attack_power - target.defense  # Dégâts faibles
         super().load_sound_effect("soundeffects/potion_sound.mp3")
 
+    #Compétence spéciale
     def heal_allies(self, target):
         """Soigne une unité alliée."""
         super().load_sound_effect("soundeffects/heal_sound.mp3")
-        if target.team == self.team:  # Only heal allies
+        if target.team == self.team:  
             target.health += self.attack_power * 2
-            target.health = min(target.health, 100)  # Cap health at 100
-            if isinstance(target, Giant): # Cap health at 125 for Giant
-                target.health = min(target.health, 125)
-            if isinstance(target, Mage): # Cap health at 75 for Mage
-                target.health = min(target.health, 75)
+            target.health = min(target.health, 100)  # 100 est le maximum de points de vie par défaut, excepté le géant et le mage
+            if isinstance(target, Giant) or isinstance(target, Mage): 
+                target.health = min(target.health, target.max_health)
             print(f"Cannot heal {target.__class__.__name__}, they are not an ally!")
-
 
 '''Le Bomber'''
 
@@ -265,6 +251,8 @@ class Bomber(Unit):
         self.explode_range = GC.EXPLODE_RANGE
         self.ranges = [self.bomb_range, self.explode_range]  
 
+
+    #Attaque
     def throw_bomb(self, target, all_units, tile_map, game_instance):
         """
         Lance une bombe sur la cible spécifiée, infligeant des dégâts de zone (AoE) à toutes les unités dans la portée.

@@ -18,7 +18,6 @@ def test_generate_world(weights, random_seed):
         tile_map = world.get_tiled_map(weights)
         world_drawer.draw(tile_map, wait_for_key = True)
 
-
 def test_emerge(target_weights, random_seed):
     # Cette fonction simule l'émergence d'un monde en ajustant progressivement les poids des différents types de terrain
     # (eau, sable, herbe, etc.) jusqu'à atteindre des poids cibles.

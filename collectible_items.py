@@ -6,13 +6,14 @@ from Tiles import *
 from world import * 
 import random
 from GameLog import *
+
 class Effect : 
     def __init__(self, effect_type, sound_path):
         self.effect_type = effect_type
         self.sound = mixer.Sound(sound_path)
         self.is_active = False
         self.value_changed = 0
-        self.applied_turn = None  # Store when this effect was applied
+        self.applied_turn = None 
 
     def apply(self, unit):
         if self.effect_type == "speed":
@@ -36,6 +37,7 @@ class Effect :
             self.is_active = True
             self.sound.play()
         self.applied_turn = GC.turn_number
+        
     def revert(self, unit):
         if not self.is_active:
             return
@@ -50,8 +52,6 @@ class Effect :
         self.value_changed = 0
         self.applied_turn = None
 
-
- 
 class CollectibleItem:
     def __init__(self, effect, image_path, sound_path, respawn_time, tile_map, game_log):
         self.effect = effect
@@ -73,22 +73,19 @@ class CollectibleItem:
             if self.respawn_counter >= self.respawn_time:
                 self.is_active = True
                 self.respawn_counter = 0
-                self.sound.play()  # Play sound when item respawns
+                self.sound.play()  
                 
-
     def collect(self, unit):
-        print("DEBUG: Collect called with unit at", unit.x, unit.y, "and item at", self.x, self.y)
-        # Convert unit position from pixels to grid coordinates
+        # Convertir la position de l'unité de pixels en coordonnées de grille 
         unit_cell_x = unit.x 
         unit_cell_y = unit.y 
         
-        # Convert collectible position from pixels to grid coordinates
+        # Convertir la position de l'objet ramassable de pixels en coordonnées de grille 
         item_cell_x = self.x 
         item_cell_y = self.y
         
-        # Check if unit is on the same cell as the collectible
+        # Vérifier si l'unité est sur la meme cellule que l'objet 
         if self.is_active and unit.x == self.x and unit.y == self.y:
-            print("DEBUG: Item collected!")
             self.effect.apply(unit)
             self.game_log.add_message("Collectible collected", 'other')
             self.effect.applied_turn = GC.turn_number
@@ -97,7 +94,6 @@ class CollectibleItem:
             
             if self.effect.is_active:
                 unit.active_effects.append(self.effect)
-                print(f"DEBUG: Effect '{self.effect.effect_type}' applied to unit {unit}. Current active effects: {[e.effect_type for e in unit.active_effects]}")
             self.sound.play()
             self.is_active = False
             self.respawn_counter = 0

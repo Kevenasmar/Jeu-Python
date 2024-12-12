@@ -51,8 +51,10 @@ class Game:
         self.collectible_items = []
         self.collectible_templates = self.initialize_collectibles(tile_map)
 
-    '''--------S'assurer que les unités n'apparaissent pas sur des cases non praticables------------''' 
+    '''-------------------Ici, on gère l'apparition des unités sur la map en début de jeu-------------------'''
+    
     def inititialize_walkable_tiles(self) :
+        '''S'assurer que les unités n'apparaissent pas sur des cases non praticables''' 
         set_walkable_tiles = set () 
         for x in range (GC.WORLD_X):
             for y in range (GC.WORLD_Y):
@@ -60,7 +62,6 @@ class Game:
                     set_walkable_tiles.add((x, y))
         return set_walkable_tiles
     
-    '''Ici, on gère l'apparition des unités sur la map en début de jeu'''
     def get_spawn_sector_p1(self) :
         sector_width = GC.WORLD_X // 3 
         sector_height = GC.WORLD_Y // 3
@@ -116,6 +117,7 @@ class Game:
 
 
     '''-----------------------Objets Ramassables------------------------------------'''
+    
     def initialize_collectibles(self, tile_map):
         
         # Effet son
@@ -144,8 +146,8 @@ class Game:
                 self.game_log)
             }
 
-    '''Apparition aléatoire des objets'''
     def spawn_collectible(self):
+        '''Apparition aléatoire des objets'''
         print("Spawning collectible...")
         # Choisir un objet aléatoirement 
         collectible_type = random.choice(list(self.collectible_templates.keys()))
@@ -202,7 +204,7 @@ class Game:
                 self.screen.blit(item.image, (item.x * GC.CELL_SIZE, item.y * GC.CELL_SIZE))
 
 
-    '''------------------Utilitaires, affichage et déplacement-----------------------'''
+    '''------------------Utilitaires & affichage------------------------------'''
   
     def calculate_valid_cells(self, unit):
         """Retourne les cases accessibles pour une unité, en excluant les cases occupées par d'autres unités dans son rayon de déplacement."""
@@ -340,6 +342,7 @@ class Game:
         self.game_log.draw()
         pygame.display.update()
 
+
     '''--------------------------------------Attaques-----------------------------------------'''
     
     def calculate_valid_attack_cells(self, unit, attack_range, opponent_units):
@@ -360,7 +363,7 @@ class Game:
         return valid_attack_cells
 
     def calculate_valid_heal_cells(self, unit, heal_range, ally_units):
-        '''Retourne les cases valides pour le mage lors de la selection "Heal"'''
+        '''Retourne les cases valides pour le mage lors de la sélection "Heal"'''
         valid_heal_cells = []
         for dx in range(-heal_range, heal_range + 1):
             for dy in range(-heal_range, heal_range + 1):
@@ -751,10 +754,11 @@ class Game:
         return False
 
 
-    '''------------------Boucle Main-----------------------------------------------------------'''
+    '''------------------Boucle Principale du Jeu-----------------------------------------------------------'''
     
 def main():
     pygame.init()
+    
     # Musique de fond
     pygame.mixer.init()
     try:
@@ -812,7 +816,7 @@ def main():
                     winner = "Player 2"
                     break
                 
-                game.draw_collectibles()  # Draw collectibles
+                game.draw_collectibles()  # Dessiner les objets ramassables
                 pygame.display.flip()  # Mise a jour de l'affichage une fois par cycle
                 clock.tick(60)
 

@@ -1,5 +1,5 @@
-#constantes 
-#defini dans ce fichier toutes les constantes que tu utilise dans le code
+'''Dans ce fichier, on définit toutes les constantes utilisées dans le projet'''
+
 class GameConstantes : 
 
     GRID_SIZE = 14
@@ -9,6 +9,8 @@ class GameConstantes :
     WIDTH = GRID_SIZE * CELL_SIZE
     HEIGHT = GRID_SIZE * CELL_SIZE
     FPS = 60
+    
+    '''Couleurs'''
     WHITE = (255, 255, 255)
     BLACK = (0, 0, 0)
     RED = (255, 0, 0)
@@ -34,7 +36,15 @@ class GameConstantes :
     montain = 5
 
 
-    #Propriétés des unités
+    '''
+    Propriétés des unités:
+   HP: Nombre de points de vie initial
+   ATK: Pouvoir d'attaque
+   SPEED: Statistique de vitesse
+   DEF: Statistique de défense
+   RANGE: Portée d'attaque
+   '''
+   
     #ARCHER 
     ARCHER_HP = 100
     ARCHER_ATK = 12
@@ -42,7 +52,7 @@ class GameConstantes :
     ARCHER_SPEED = 5
     NORMAL_ARROW_RANGE = 5
     FIRE_ARROW_RANGE = 3
-    HEADSHOT_PROB = 0.1
+    HEADSHOT_PROB = 0.1 #Probabilité de mort instantanée avec la Normal Arrow
 
     #GIANT
     GIANT_HP = 125
