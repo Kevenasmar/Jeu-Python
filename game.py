@@ -12,14 +12,6 @@ from menu import *
 from collectible_items import *
 
 
-tiles_kind = [
-    SandTile(),  # False veut dire que la case est praticable
-    RockTile(),
-    WaterTile()
-]
-
-map = Map("map/start.map", tiles_kind, GC.CELL_SIZE)
-
 class Game:
     def __init__(self, screen, tile_map):
         self.screen = screen
@@ -47,7 +39,7 @@ class Game:
         
         self.walkable_tiles = self.inititialize_walkable_tiles()
         self.collectible_spawn_timer = 0
-        self.spawn_interval = 2 
+        self.spawn_interval = 1
         self.collectible_items = []
         self.collectible_templates = self.initialize_collectibles(tile_map)
 
@@ -133,6 +125,7 @@ class Game:
                 effects["speed"],
                 'image/speed_potion.png',
                 "soundeffects/apply_effect.wav",
+                "soundeffects/appearance_effect.wav",
                 120,
                 tile_map,
                 self.game_log
@@ -141,6 +134,7 @@ class Game:
                 effects["damage"],
                 'image/power_buff.png',
                 "soundeffects/apply_effect.wav",
+                "soundeffects/appearance_effect.wav",
                 120,
                 tile_map,
                 self.game_log)
@@ -148,10 +142,10 @@ class Game:
 
     def spawn_collectible(self):
         '''Apparition aléatoire des objets'''
-        print("Spawning collectible...")
         # Choisir un objet aléatoirement 
         collectible_type = random.choice(list(self.collectible_templates.keys()))
         new_collectible = self.collectible_templates[collectible_type]()
+        
         max_items_shown = 3
         activated_items = 0 
         for item in self.collectible_items : 
@@ -160,7 +154,7 @@ class Game:
         
         if activated_items >= max_items_shown :
             return 
-        
+        new_collectible.sound_appearence()
         # Trouver une position valide pour l'apparition
         walkable_tiles = []
         for x in range(GC.WORLD_X):
@@ -175,16 +169,13 @@ class Game:
                             break
                     if not too_close:
                         walkable_tiles.append((x, y))
-        print(f"Found {len(walkable_tiles)} walkable tiles.")
         if walkable_tiles:
             spawn_x, spawn_y = random.choice(walkable_tiles)
             new_collectible.x = spawn_x 
             new_collectible.y = spawn_y 
             self.collectible_items.append(new_collectible)
             self.game_log.add_message("Collectible spawned", 'other')
-            print("Collectible are spawned at", spawn_x, spawn_y)
-        else : 
-            print('No walkable tile found for collectible!')
+        
         
     def update_collectibles(self, delta_time):
         self.collectible_spawn_timer += delta_time
@@ -728,8 +719,6 @@ class Game:
             self.flip_display()
         self.revert_player_effects(current_player_units)
         GC.turn_number += 1 
-        print(GC.turn_number)
-        print('turn finished')
         
     def revert_player_effects(self, units):
         # Annuler tous les effets pour toutes les unités de la liste donnée.
@@ -737,7 +726,7 @@ class Game:
            if hasattr(unit, 'active_effects'):
             remaining_effects = []
             for effect in unit.active_effects:
-                if effect.applied_turn < GC.turn_number:
+                if effect.applied_turn is not None and effect.applied_turn < GC.turn_number:
                     effect.revert(unit)
                 else:
                     remaining_effects.append(effect)
@@ -797,7 +786,6 @@ def main():
             running = True
             last_time = pygame.time.get_ticks()
             while running:
-                print("Main loop iteration starting...")
                 current_time = pygame.time.get_ticks()
                 delta_time = (current_time - last_time) / 1000.0  # Convert to seconds
                 last_time = current_time
