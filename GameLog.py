@@ -2,7 +2,7 @@ from datetime import datetime
 from posixpath import split
 import pygame 
 pygame.init()
-from constante import GameConstantes as GC # type: ignore
+from constante import GameConstantes as GC 
 
 # Description des compétences pour facilité
 ABILITY_DESCRIPTIONS = {
@@ -195,7 +195,7 @@ class GameLog:
 
         # Ajouter une info supplémentaire pour le Mage 
         if unit_name == "Mage":
-            water_ability_surface = self.font.render("Can walk on water!", True, GC.BLUE)
+            water_ability_surface = self.font.render("Walks on water!", True, GC.BLUE)
             self.screen.blit(water_ability_surface, (stats_x, stats_y))
             stats_y += 30
 
@@ -235,43 +235,37 @@ class GameLog:
             self.screen.blit(range_surface, (abilities_x + 20, abilities_y))  
             abilities_y += 30
             
-                        # Add a warning for the "explode" ability
             if ability['name'] == "explode":
                 warning_surface = self.font.render(
                     "CAREFUL! This hurts allies too.", True, (255, 165, 0)  # Orange for warning
                 )
                 self.screen.blit(warning_surface, (abilities_x + 20, abilities_y))
-                abilities_y += 30  # Add spacing after the warning
+                abilities_y += 30  
 
-        # Adjust potion section to expand leftward
-        potion_section_x = self.pos_x + self.width - 200  # Move 200px left for expanded size
-        potion_section_y = info_area_y + 2  # Align with the top border of the blue section
+        # Informations sur les potions
+        potion_section_x = self.pos_x + self.width - 200  
+        potion_section_y = info_area_y + 2 
         potion_width = 50
         potion_height = 50
-        potion_gap = 10  # Gap between potions
+        potion_gap = 10 
 
-        # Draw a background rectangle for the potions
         pygame.draw.rect(
             self.screen,
-            (173, 216, 230),  # Gray background
-            (potion_section_x, potion_section_y, 200, 120 + potion_gap)  # Wider by 50px
+            (173, 216, 230),  # Gris
+            (potion_section_x, potion_section_y, 200, 120 + potion_gap) 
         )
 
-        # Load and display the potion images with text
         try:
             health_potion = pygame.image.load("image/speed_potion.png")
             power_potion = pygame.image.load("image/power_buff.png")
 
-            # Scale the potion images
             health_potion = pygame.transform.scale(health_potion, (potion_width, potion_height))
             power_potion = pygame.transform.scale(power_potion, (potion_width, potion_height))
 
-            # Display the first potion
             self.screen.blit(health_potion, (potion_section_x + 10, potion_section_y + 10))
             speed_text_surface = self.font.render("+3 Speed", True, GC.BLACK)
             self.screen.blit(speed_text_surface, (potion_section_x + 70, potion_section_y + 25))
 
-            # Display the second potion
             self.screen.blit(power_potion, (potion_section_x + 10, potion_section_y + 10 + potion_height + potion_gap))
             damage_text_surface = self.font.render("+5 Damage", True, GC.BLACK)
             self.screen.blit(damage_text_surface, (potion_section_x + 70, potion_section_y + 10 + potion_height + potion_gap + 15))
@@ -279,25 +273,23 @@ class GameLog:
         except pygame.error as e:
             print(f"Error loading potion images: {e}")
 
-
-
-
     def draw(self):
         """Draws the GameLog, including messages and unit info."""
-        # Draw the background
+        
+        # Fond
         pygame.draw.rect(
             self.screen,
             self.couleur_fond,
             (self.pos_x, self.pos_y, self.width, self.height),
         )
 
-        # Draw the GameLog messages
+        # Dessine les messages 
         y_offset = 10
         for message in self.messages:
             self.screen.blit(message, (self.pos_x + 10, self.pos_y + y_offset))
             y_offset += 25
 
-        # Draw the selected unit's info
+        # Afficher les informations 
         if self.selected_unit:
             self.draw_unit_info()
 
