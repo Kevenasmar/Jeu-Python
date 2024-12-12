@@ -14,7 +14,7 @@ Bienvenue dans notre jeu 'Rise of Heros'
 
 Bienvenue dans "Rise of Heroes", un jeu de stratégie 2D où des unités variées s'affrontent sur une carte générée aléatoirement. Ce document décrit le fonctionnement général du projet.
 
-<<<<<<< HEAD
+
 - ## **Structure du Projet:**  
 Voici les principaux fichiers et leur rôle dans le projet:
 1. `game.py`: contient la logique principale du jeu, y compris les mécanismes de déplacement, d'attaque et les tours des joueurs.
@@ -32,9 +32,8 @@ Voici les principaux fichiers et leur rôle dans le projet:
 - ## **Fonctionnalités:** 
 1. #### **Déplacement et Combat:**
 Les unités peuvent se déplacer sur une grille et attaquer en fonction de leurs portées et compétences spécifiques. À chaque tour, le joueur peut déplacer son unité et/ou exécuter une compétence. Une unité ne peut attaquer qu'à condition qu'un ennemi soit situé dans sa ligne de vue (sans obstacle bloquant) et dans la portée d'attaque de la compétence utilisée.
-=======
-### Fonctionnalités principales :
->>>>>>> d6b877836343e5268b42fc680e542d856837b3af
+
+2. #### **Fonctionnalités principales:**
 
 - Quatre types d'unités uniques (Archer, Mage, Bomber, Géant)
 - Génération procédurale de carte avec différents types de terrain
@@ -42,7 +41,7 @@ Les unités peuvent se déplacer sur une grille et attaquer en fonction de leurs
 - Interface graphique interactive
 - Système de collecte d'objets et d'effets
 
-### Types de Héros
+3. #### **Types de Héros**
 
 - **Archer**: Attaque à distance avec des flèches normales et enflammées. La flèche normale a une probabilité de Headshot (mort instantanée) de 10%.
 - **Mage**: Peut marcher sur l'eau, soigner des alliés, et lancer des potions magiques.
@@ -97,16 +96,3 @@ Développé par l'équipe :
 Note : Ce projet a été développé dans le cadre d'un projet universitaire de Programmation Orientée Objet.
 
 </aside>
-
-<<<<<<< HEAD
-3. #### **Types de Héros:**  
-**Archer**: Attaque à distance avec des flèches normales et enflammées. La flèche normale a une probabilité de Headshot (mort instantanée) de 10%.  
-**Mage**: Peut marcher sur l'eau, soigner des alliés, et lancer des potions magiques.  
-**Géant**: Inflige des dégâts importants avec des coups de poing ou des "stomps".  
-**Bomber**: Lance une bombe ou sacrifie sa vie pour infliger des dégâts massifs en explosant.  
-
-4. #### **Objets collectables**
-Deux types de potions (jaunes et bleues) apparaissent aléatoirement sur la Map au cours du jeu et apparaissent aléatoirement sur la carte au cours du jeu et produisent un effet sur l'unité qui les récupère, pour une durée d’un tour.
-**Potion Jaune**: Augmente temporairement le pouvoir dattaque de l'unitéAugmente temporairement la vitesse de déplacement de l'unité.
-=======
->>>>>>> d6b877836343e5268b42fc680e542d856837b3af
