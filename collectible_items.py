@@ -53,12 +53,13 @@ class Effect :
         self.applied_turn = None
 
 class CollectibleItem:
-    def __init__(self, effect, image_path, sound_path, respawn_time, tile_map, game_log):
+    def __init__(self, effect, image_path, apply_sound_path, spawn_sound_path, respawn_time, tile_map, game_log):
         self.effect = effect
         self.image_path = image_path
         Loaded_image = pygame.image.load(image_path).convert_alpha()
         self.image = pygame.transform.scale(Loaded_image, (GC.CELL_SIZE, GC.CELL_SIZE))
-        self.sound = mixer.Sound(sound_path)
+        self.apply_sound = mixer.Sound(apply_sound_path)
+        self.spawn_sound = mixer.Sound(spawn_sound_path)
         self.respawn_time = respawn_time
         self.is_active = True
         self.respawn_counter = 0
@@ -67,13 +68,15 @@ class CollectibleItem:
         self.y = 0
         self.game_log = game_log
 
+    def sound_appearence(self) : 
+        self.spawn_sound.play() 
     def update(self, delta_time):
         if not self.is_active:
             self.respawn_counter += delta_time
             if self.respawn_counter >= self.respawn_time:
                 self.is_active = True
                 self.respawn_counter = 0
-                self.sound.play()  
+                 
                 
     def collect(self, unit):
         # Convertir la position de l'unité de pixels en coordonnées de grille 
@@ -86,6 +89,9 @@ class CollectibleItem:
         
         # Vérifier si l'unité est sur la meme cellule que l'objet 
         if self.is_active and unit.x == self.x and unit.y == self.y:
+            if hasattr(unit, 'active_effects') and any(effect.is_active for effect in unit.active_effects):
+                self.game_log.add_message("Cannot collect another item while an effect is active.", 'other')
+                return  # Do not allow collection if an effect is active
             self.effect.apply(unit)
             self.game_log.add_message("Collectible collected", 'other')
             self.effect.applied_turn = GC.turn_number
@@ -94,6 +100,6 @@ class CollectibleItem:
             
             if self.effect.is_active:
                 unit.active_effects.append(self.effect)
-            self.sound.play()
+            self.apply_sound.play()
             self.is_active = False
             self.respawn_counter = 0
