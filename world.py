@@ -110,18 +110,12 @@ class Map_Aleatoire:
         if not (0 <= x < len(self.terrain_data[0]) and 0 <= y < len(self.terrain_data)):
             return False
         
+        # Récupérer le type de terrain et la tuile correspondante
         terrain_type = self.terrain_data[y][x]
         tile = self.terrain_tiles[terrain_type]
         
-        # Vérification pour le mage en premier
-        if isinstance(unité, Mage) and isinstance(tile, WaterTile):
-            return True  # Le mage peut marcher sur l'eau
-            
-        # Vérification si la tuile est solide
-        if tile.is_solide:
-            return False
-            
-        return True  # Le terrain est marchable
+        # Utiliser la méthode `interact` pour déterminer si l'unité peut marcher sur la tuile
+        return tile.interact(unité)
     
 
     def draw(self, screen):
