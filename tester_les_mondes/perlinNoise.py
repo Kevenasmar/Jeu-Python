@@ -10,6 +10,7 @@ WEIGHTS3 = [10, 15, 15, 15, 50, 15, 45]     # Poids pour générer des lacs
 
 
 # Appels de la fonction de génération de monde avec différents poids et graines aléatoires
+# toucher E pour passer entre les differents mondes
 test_generate_world(WEIGHTS1, random_seed = 21)
 test_generate_world(WEIGHTS1, random_seed = 258)
 test_generate_world(WEIGHTS2, random_seed = 7)
