@@ -3,7 +3,7 @@ import random
 from unit import *
 from Tiles import *
 from constante import GameConstantes as GC
-from world import*
+from world import Map_Aleatoire
 from GameLog import * 
 from menu import *  
 from collectible_items import *
@@ -750,7 +750,7 @@ def main():
     try:
         pygame.mixer.music.load("music/music.mp3")  
         pygame.mixer.music.play(-1)  
-        pygame.mixer.music.set_volume(0) 
+        pygame.mixer.music.set_volume(0.5) 
     except pygame.error as e:
         print(f"Error loading music: {e}") 
          
