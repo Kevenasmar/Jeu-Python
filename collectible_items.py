@@ -8,6 +8,7 @@ import random
 from GameLog import *
 
 class Effect : 
+    # Initialisation de l'effet
     def __init__(self, effect_type, sound_path):
         self.effect_type = effect_type
         self.sound = mixer.Sound(sound_path)
@@ -15,6 +16,7 @@ class Effect :
         self.value_changed = 0
         self.applied_turn = None 
 
+    # Application de l'effet à une unité
     def apply(self, unit):
         if self.effect_type == "speed":
             speed_buff_amount = 3
@@ -38,6 +40,7 @@ class Effect :
             self.sound.play()
         self.applied_turn = GC.turn_number
         
+    # Réinitialisation de l'effet
     def revert(self, unit):
         if not self.is_active:
             return
@@ -53,6 +56,7 @@ class Effect :
         self.applied_turn = None
 
 class CollectibleItem:
+    # Initialisation de l'objet collectable
     def __init__(self, effect, image_path, apply_sound_path, spawn_sound_path, respawn_time, tile_map, game_log):
         self.effect = effect
         self.image_path = image_path
@@ -68,16 +72,19 @@ class CollectibleItem:
         self.y = 0
         self.game_log = game_log
 
+    # Jouer le son d'apparition de l'objet
     def sound_appearence(self) : 
         self.spawn_sound.play() 
+
+    # Mise à jour de l'objet
     def update(self, delta_time):
         if not self.is_active:
             self.respawn_counter += delta_time
             if self.respawn_counter >= self.respawn_time:
                 self.is_active = True
                 self.respawn_counter = 0
-                 
                 
+    # Collecte de l'objet par une unité
     def collect(self, unit):
         # Convertir la position de l'unité de pixels en coordonnées de grille 
         unit_cell_x = unit.x 

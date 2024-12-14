@@ -1,11 +1,8 @@
 import pygame
 import random
-
 from unit import *
 from Tiles import *
 from constante import GameConstantes as GC
-from configureWorld import*
-from World_Drawer import *
 from world import*
 from GameLog import * 
 from menu import *  
@@ -39,7 +36,7 @@ class Game:
         
         self.walkable_tiles = self.inititialize_walkable_tiles()
         self.collectible_spawn_timer = 0
-        self.spawn_interval = 1
+        self.spawn_interval = 3
         self.collectible_items = []
         self.collectible_templates = self.initialize_collectibles(tile_map)
 
