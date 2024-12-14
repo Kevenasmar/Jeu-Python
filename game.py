@@ -3,7 +3,7 @@ import random
 from unit import *
 from Tiles import *
 from constante import GameConstantes as GC
-from world import*
+from world import Map_Aleatoire
 from GameLog import * 
 from menu import *  
 from collectible_items import *

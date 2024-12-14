@@ -30,8 +30,8 @@ class GameConstantes :
 
     water = 0
     sand = 1
-    grass = 2
-    rock = 3
+    rock = 2
+    grass = 3
     log = 4
     montain = 5
 
