@@ -750,7 +750,7 @@ def main():
     try:
         pygame.mixer.music.load("music/music.mp3")  
         pygame.mixer.music.play(-1)  
-        pygame.mixer.music.set_volume(0) 
+        pygame.mixer.music.set_volume(0.5) 
     except pygame.error as e:
         print(f"Error loading music: {e}") 
          
